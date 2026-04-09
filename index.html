@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <title>CORE C12</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+  <!-- =============================================
+       AVISO ORIENTACIÓN PORTRAIT
+       ============================================= -->
+  <div class="portrait-warning" aria-hidden="true">
+    <div class="portrait-warning__icon">⟳</div>
+    <p class="portrait-warning__text">
+      Gira el dispositivo<br>para usar CORE C12
+    </p>
+  </div>
+
+  <!-- =============================================
+       APLICACIÓN PRINCIPAL
+       ============================================= -->
+  <div class="app">
+
+    <!-- BANDA BRANDING -->
+    <header class="branding">
+      <span class="branding__name">CORE C12</span>
+      <span class="branding__powered">Powered by AndaraLab</span>
+    </header>
+
+    <!-- DISPLAY PRINCIPAL -->
+    <section class="display" aria-label="Display de la calculadora">
+
+      <!-- Número principal -->
+      <div class="display__number" id="display-number">0</div>
+
+      <!-- Línea 1: estado abreviado + selector de decimales -->
+      <div class="display__statusbar">
+        <div class="display__status" id="display-status"></div>
+        <div class="display__decimals" aria-label="Selector de decimales">
+          <button class="btn--decimal" data-action="set-decimals" data-decimals="1" aria-label="1 decimal">1</button>
+          <button class="btn--decimal" data-action="set-decimals" data-decimals="2" aria-label="2 decimales">2</button>
+          <button class="btn--decimal" data-action="set-decimals" data-decimals="3" aria-label="3 decimales">3</button>
+          <button class="btn--decimal" data-action="set-decimals" data-decimals="4" aria-label="4 decimales">4</button>
+        </div>
+      </div>
+
+      <!-- Línea 2: detalle de operación (estilo trace) -->
+      <div class="display__detail" id="display-detail"></div>
+
+    </section>
+
+    <!-- ÁREA DE TRABAJO -->
+    <main class="workspace">
+
+      <!-- ==========================================
+           COLUMNA IZQUIERDA — FUNCIONES ESPECIALES
+           ========================================== -->
+      <div class="col-left">
+
+        <!-- BLOQUE IVA -->
+        <div class="special-block special-block--iva">
+          <span class="special-block__label">IVA</span>
+          <div class="special-block__grid">
+            <button class="btn btn--special btn--iva" data-action="iva-add" data-rate="4"
+              aria-label="Añadir IVA 4 por ciento">
+              +IVA 4%
+            </button>
+            <button class="btn btn--special btn--iva" data-action="iva-add" data-rate="10"
+              aria-label="Añadir IVA 10 por ciento">
+              +IVA 10%
+            </button>
+            <button class="btn btn--special btn--iva" data-action="iva-add" data-rate="21"
+              aria-label="Añadir IVA 21 por ciento">
+              +IVA 21%
+            </button>
+            <button class="btn btn--special btn--iva" data-action="iva-sub" data-rate="4"
+              aria-label="Descontar IVA 4 por ciento">
+              &minus;IVA 4%
+            </button>
+            <button class="btn btn--special btn--iva" data-action="iva-sub" data-rate="10"
+              aria-label="Descontar IVA 10 por ciento">
+              &minus;IVA 10%
+            </button>
+            <button class="btn btn--special btn--iva" data-action="iva-sub" data-rate="21"
+              aria-label="Descontar IVA 21 por ciento">
+              &minus;IVA 21%
+            </button>
+          </div>
+        </div>
+
+        <!-- BLOQUE MÁRGENES -->
+        <div class="special-block special-block--margin">
+          <span class="special-block__label">MARGEN</span>
+          <div class="special-block__grid">
+            <button class="btn btn--special btn--margin" data-action="margin" data-rate="20"
+              aria-label="Margen 20 por ciento">
+              20%
+            </button>
+            <button class="btn btn--special btn--margin" data-action="margin" data-rate="25"
+              aria-label="Margen 25 por ciento">
+              25%
+            </button>
+            <button class="btn btn--special btn--margin" data-action="margin" data-rate="30"
+              aria-label="Margen 30 por ciento">
+              30%
+            </button>
+            <button class="btn btn--special btn--margin" data-action="margin" data-rate="35"
+              aria-label="Margen 35 por ciento">
+              35%
+            </button>
+            <button class="btn btn--special btn--margin" data-action="margin" data-rate="40"
+              aria-label="Margen 40 por ciento">
+              40%
+            </button>
+            <button class="btn btn--special btn--margin" data-action="margin" data-rate="45"
+              aria-label="Margen 45 por ciento">
+              45%
+            </button>
+          </div>
+        </div>
+
+      </div>
+      <!-- /col-left -->
+
+      <!-- ==========================================
+           COLUMNA DERECHA — CALCULADORA BASE
+           ========================================== -->
+      <div class="col-right" aria-label="Teclado de la calculadora">
+
+        <!-- FILA 1: Control -->
+        <button class="btn btn--control" data-action="clear" aria-label="Borrar último dígito">
+          C
+        </button>
+        <button class="btn btn--control btn--ac" data-action="all-clear" aria-label="Borrar todo">
+          AC
+        </button>
+        <button class="btn btn--control" data-action="sign" aria-label="Cambiar signo">
+          +/&minus;
+        </button>
+        <button class="btn btn--control" data-action="percent" aria-label="Porcentaje">
+          %
+        </button>
+
+        <!-- FILA 2: 7 8 9 ÷ -->
+        <button class="btn btn--digit" data-action="digit" data-value="7">7</button>
+        <button class="btn btn--digit" data-action="digit" data-value="8">8</button>
+        <button class="btn btn--digit" data-action="digit" data-value="9">9</button>
+        <button class="btn btn--operator" data-action="operator" data-value="/">÷</button>
+
+        <!-- FILA 3: 4 5 6 × -->
+        <button class="btn btn--digit" data-action="digit" data-value="4">4</button>
+        <button class="btn btn--digit" data-action="digit" data-value="5">5</button>
+        <button class="btn btn--digit" data-action="digit" data-value="6">6</button>
+        <button class="btn btn--operator" data-action="operator" data-value="*">&times;</button>
+
+        <!-- FILA 4: 1 2 3 − -->
+        <button class="btn btn--digit" data-action="digit" data-value="1">1</button>
+        <button class="btn btn--digit" data-action="digit" data-value="2">2</button>
+        <button class="btn btn--digit" data-action="digit" data-value="3">3</button>
+        <button class="btn btn--operator" data-action="operator" data-value="-">&minus;</button>
+
+        <!-- FILA 5: 0 (doble) . + -->
+        <button class="btn btn--digit btn--zero" data-action="digit" data-value="0" aria-label="Cero">
+          0
+        </button>
+        <button class="btn btn--digit" data-action="decimal" aria-label="Punto decimal">
+          .
+        </button>
+        <button class="btn btn--operator" data-action="operator" data-value="+">+</button>
+
+        <!-- FILA 6: = (ancho completo, altura dominante) -->
+        <button class="btn btn--equals" data-action="equals" aria-label="Calcular resultado">
+          =
+        </button>
+
+      </div>
+      <!-- /col-right -->
+
+    </main>
+    <!-- /workspace -->
+
+  </div>
+  <!-- /app -->
+
+  <script src="calc.js"></script>
+</body>
+
+</html>

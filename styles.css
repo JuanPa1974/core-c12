@@ -1,0 +1,643 @@
+/* =============================================================
+   CORE C12 — Hoja de estilos principal
+   Versión: 1.0
+   Descripción: Layout completo, sin frameworks, sin lógica JS
+   ============================================================= */
+
+
+/* ─────────────────────────────────────────────
+   VARIABLES GLOBALES
+   ───────────────────────────────────────────── */
+
+:root {
+  /* Fondos */
+  --bg-app:          #1A1A1A;
+  --bg-display:      #0D0D0D;
+  --bg-branding:     #111111;
+
+  /* Botones */
+  --bg-btn-digit:    #2A2A2A;
+  --bg-btn-control:  #2E2018;
+  --bg-btn-ac:       #3D1F1F;
+  --bg-btn-special:  #1E1E1E;
+  --bg-btn-equals:   #1A3A5C;
+
+  /* Colores de acento */
+  --color-iva:       #F5C518;
+  --color-margin:    #E07000;
+
+  /* Texto */
+  --color-text:      #FFFFFF;
+  --color-text-dim:  rgba(255, 255, 255, 0.60);
+  --color-sep:       rgba(255, 255, 255, 0.10);
+
+  /* Geometría */
+  --gap-btn:         4px;
+  --radius-btn:      6px;
+  --radius-btn-sm:   5px;
+  --radius-block:    8px;
+  --pad-block:       8px;
+  --pad-workspace:   6px;
+
+  /* Tipografía */
+  --font-ui:         -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+  --font-display:    'Courier New', 'Lucida Console', monospace;
+}
+
+
+/* ─────────────────────────────────────────────
+   RESET Y BASE
+   ───────────────────────────────────────────── */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background-color: var(--bg-app);
+  font-family: var(--font-ui);
+  color: var(--color-text);
+  -webkit-text-size-adjust: 100%;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+
+/* ─────────────────────────────────────────────
+   CONTENEDOR PRINCIPAL
+   ───────────────────────────────────────────── */
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+
+/* ─────────────────────────────────────────────
+   BANDA 1 — BRANDING
+   Altura: 6vh
+   ───────────────────────────────────────────── */
+
+.branding {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  height: 6vh;
+  min-height: 20px;
+  padding: 0 14px;
+  background-color: var(--bg-branding);
+  border-bottom: 1px solid var(--color-sep);
+}
+
+.branding__name {
+  font-family: var(--font-ui);
+  font-size: clamp(11px, 1.8vh, 15px);
+  font-weight: 700;
+  letter-spacing: 2.5px;
+  color: var(--color-text);
+  text-transform: uppercase;
+}
+
+.branding__powered {
+  font-family: var(--font-ui);
+  font-size: clamp(9px, 1.4vh, 12px);
+  font-weight: 400;
+  color: var(--color-text-dim);
+  letter-spacing: 0.3px;
+}
+
+
+/* ─────────────────────────────────────────────
+   BANDA 2 — DISPLAY PRINCIPAL
+   Altura: 21vh (número + statusbar + detalle)
+   ───────────────────────────────────────────── */
+
+.display {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: stretch;
+  flex-shrink: 0;
+  height: 21vh;
+  min-height: 80px;
+  padding: 4px 14px 6px;
+  gap: 2px;
+  background-color: var(--bg-display);
+  border-bottom: 1px solid var(--color-sep);
+}
+
+/* Número principal */
+.display__number {
+  font-family: var(--font-display);
+  font-size: clamp(28px, 5.5vh, 58px);
+  font-weight: 300;
+  color: var(--color-text);
+  text-align: right;
+  line-height: 1;
+  letter-spacing: -1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+  flex-shrink: 0;
+}
+
+/* Fila: estado abreviado (izq) + selector decimales (der) */
+.display__statusbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: clamp(14px, 2.2vh, 18px);
+  flex-shrink: 0;
+  margin-top: 6px;   /* separa el selector del número principal */
+}
+
+/* Estado abreviado — Línea 1 */
+.display__status {
+  font-family: var(--font-display);
+  font-size: clamp(9px, 1.4vh, 11px);
+  font-weight: 400;
+  text-align: left;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: transparent;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  transition: color 150ms ease;
+}
+
+.display__status.is-visible {
+  color: var(--color-iva);
+}
+
+/* Selector de decimales */
+.display__decimals {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+  margin-left: 8px;
+}
+
+.btn--decimal {
+  width: 26px;
+  height: 26px;
+  padding: 0 5px;
+  border-radius: 5px;
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.25);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 100ms ease, background-color 100ms ease, border-color 100ms ease;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  touch-action: manipulation;
+  outline: none;
+}
+
+.btn--decimal.is-active {
+  background-color: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.22);
+  color: rgba(255, 255, 255, 1);
+}
+
+.btn--decimal:active {
+  background-color: rgba(255, 255, 255, 0.10);
+}
+
+@media (hover: hover) {
+  .btn--decimal:hover {
+    background-color: rgba(255, 255, 255, 0.09);
+    border-color: rgba(255, 255, 255, 0.14);
+    color: rgba(255, 255, 255, 0.55);
+  }
+  .btn--decimal.is-active:hover {
+    background-color: rgba(255, 255, 255, 0.24);
+    color: rgba(255, 255, 255, 1);
+  }
+}
+
+/* Detalle de operación — Línea 2 */
+.display__detail {
+  font-family: var(--font-display);
+  font-size: clamp(9px, 1.3vh, 11px);
+  font-weight: 400;
+  text-align: left;
+  color: transparent;
+  letter-spacing: 0.3px;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+  min-height: clamp(10px, 1.6vh, 13px);
+  flex-shrink: 0;
+  transition: color 150ms ease;
+}
+
+.display__detail.is-visible {
+  color: rgba(255, 255, 255, 0.38);
+}
+
+
+/* ─────────────────────────────────────────────
+   BANDA 3 — ÁREA DE TRABAJO
+   Altura: flex restante (~78vh)
+   ───────────────────────────────────────────── */
+
+.workspace {
+  display: flex;
+  flex-direction: row;
+  flex: 1;
+  min-height: 0;              /* permite que flex-children no desborden */
+  padding: var(--pad-workspace);
+  gap: var(--pad-workspace);
+  overflow: hidden;
+}
+
+
+/* ─────────────────────────────────────────────
+   COLUMNA IZQUIERDA — 38%
+   Funciones especiales: IVA + Márgenes
+   ───────────────────────────────────────────── */
+
+.col-left {
+  width: 38%;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--pad-workspace);
+  min-height: 0;
+}
+
+/* Bloque genérico (IVA o Márgenes) */
+.special-block {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  border-radius: var(--radius-block);
+  padding: var(--pad-block);
+  padding-top: calc(var(--pad-block) + 6px);  /* espacio extra para la etiqueta */
+}
+
+.special-block--iva {
+  border: 1px solid var(--color-iva);
+}
+
+.special-block--margin {
+  border: 1px solid var(--color-margin);
+}
+
+/* Etiqueta flotante sobre el borde */
+.special-block__label {
+  position: absolute;
+  top: -7px;
+  left: 10px;
+  font-family: var(--font-ui);
+  font-size: clamp(8px, 1.2vh, 10px);
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  line-height: 1;
+  padding: 0 5px;
+  background-color: var(--bg-app);   /* corta el borde visualmente */
+}
+
+.special-block--iva .special-block__label {
+  color: var(--color-iva);
+}
+
+.special-block--margin .special-block__label {
+  color: var(--color-margin);
+}
+
+/* Grid interior del bloque: 3 col × 2 filas */
+.special-block__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: var(--gap-btn);
+  flex: 1;
+  min-height: 0;
+}
+
+
+/* ─────────────────────────────────────────────
+   COLUMNA DERECHA — 62%
+   Calculadora base — Grid 4 col × 6 filas
+   ───────────────────────────────────────────── */
+
+.col-right {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  /*
+    5 filas iguales (1fr) + fila = (1.2fr → 120% del base)
+    Fila 1: C  AC  +/−  %
+    Fila 2: 7  8   9    ÷
+    Fila 3: 4  5   6    ×
+    Fila 4: 1  2   3    −
+    Fila 5: 0(×2)  .    +
+    Fila 6: =  =   =    =  (span 4 cols)
+  */
+  grid-template-rows: repeat(5, 1fr) 1.2fr;
+  gap: var(--gap-btn);
+}
+
+/* Botón 0: ocupa 2 columnas */
+.btn--zero {
+  grid-column: span 2;
+}
+
+/* Botón =: ocupa las 4 columnas de la fila 6 */
+.btn--equals {
+  grid-column: span 4;
+}
+
+
+/* ─────────────────────────────────────────────
+   BOTONES — BASE COMÚN
+   ───────────────────────────────────────────── */
+
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  border-radius: var(--radius-btn);
+  font-family: var(--font-ui);
+  font-weight: 600;
+  color: var(--color-text);
+  background-color: var(--bg-btn-digit);
+  transition:
+    background-color 60ms ease,
+    transform       60ms ease,
+    box-shadow      60ms ease;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Efecto táctil rápido (sin delay perceptible) */
+.btn:active {
+  background-color: #444444;
+  transform: scale(0.95);
+}
+
+
+/* ─────────────────────────────────────────────
+   TIPOS DE BOTÓN — Calculadora base
+   ───────────────────────────────────────────── */
+
+/* Dígitos: 0–9 y punto decimal */
+.btn--digit {
+  background-color: var(--bg-btn-digit);
+  font-size: clamp(14px, 2.6vh, 20px);
+}
+
+/* Operadores: ÷ × − + */
+.btn--operator {
+  background-color: var(--bg-btn-digit);
+  font-size: clamp(16px, 3vh, 22px);
+}
+
+.btn--operator:active {
+  background-color: #444444;
+}
+
+/* Control: C, AC, +/−, % */
+.btn--control {
+  background-color: var(--bg-btn-control);
+  font-size: clamp(11px, 2vh, 16px);
+  letter-spacing: 0.3px;
+}
+
+.btn--control:active {
+  background-color: #4A3520;
+}
+
+/* AC: más saturado para indicar destructivo */
+.btn--ac {
+  background-color: var(--bg-btn-ac);
+}
+
+.btn--ac:active {
+  background-color: #5A2A2A;
+}
+
+/* Botón = : dominante, color diferenciado */
+.btn--equals {
+  background-color: var(--bg-btn-equals);
+  font-size: clamp(18px, 3.5vh, 28px);
+  font-weight: 700;
+  letter-spacing: 2px;
+  border-radius: var(--radius-btn);
+}
+
+.btn--equals:active {
+  background-color: #102840;
+  transform: scale(0.97);
+}
+
+
+/* ─────────────────────────────────────────────
+   TIPOS DE BOTÓN — Funciones especiales
+   ───────────────────────────────────────────── */
+
+/* Base común para IVA y Márgenes */
+.btn--special {
+  background-color: var(--bg-btn-special);
+  font-size: clamp(10px, 1.7vh, 14px);
+  font-weight: 500;
+  border-radius: var(--radius-btn-sm);
+  line-height: 1.2;
+  text-align: center;
+}
+
+.btn--special:active {
+  background-color: #2E2E2E;
+  transform: scale(0.95);
+}
+
+/* Botones IVA */
+.btn--iva {
+  /* hereda de btn--special */
+}
+
+/* Botones Márgenes */
+.btn--margin {
+  /* hereda de btn--special */
+}
+
+/* Estado activo: último margen pulsado (JS añade .is-active) */
+.btn--margin.is-active {
+  background-color: #241200;
+  border: 1px solid var(--color-margin);
+  color: var(--color-margin);
+}
+
+
+/* ─────────────────────────────────────────────
+   ESTADOS HOVER (escritorio / iPad con ratón)
+   ───────────────────────────────────────────── */
+
+@media (hover: hover) {
+  .btn--digit:hover,
+  .btn--operator:hover {
+    background-color: #363636;
+  }
+
+  .btn--control:hover {
+    background-color: #3E2D1E;
+  }
+
+  .btn--ac:hover {
+    background-color: #4A2828;
+  }
+
+  .btn--equals:hover {
+    background-color: #1F4570;
+  }
+
+  .btn--special:hover {
+    background-color: #282828;
+  }
+
+  .btn--margin.is-active:hover {
+    background-color: #301800;
+  }
+}
+
+
+/* ─────────────────────────────────────────────
+   AVISO PORTRAIT (orientación vertical)
+   ───────────────────────────────────────────── */
+
+.portrait-warning {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  background-color: #0D0D0D;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  text-align: center;
+  padding: 32px;
+}
+
+.portrait-warning__icon {
+  font-size: 52px;
+  opacity: 0.5;
+  animation: rotate-hint 2s ease-in-out infinite;
+}
+
+@keyframes rotate-hint {
+  0%, 100% { transform: rotate(0deg);   }
+  50%       { transform: rotate(90deg);  }
+}
+
+.portrait-warning__text {
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--color-text-dim);
+  line-height: 1.7;
+}
+
+
+/* ─────────────────────────────────────────────
+   RESPONSIVE — Móvil landscape (< 768px)
+   ───────────────────────────────────────────── */
+
+@media (max-width: 767px) and (orientation: landscape) {
+  :root {
+    --gap-btn:    3px;
+    --pad-block:  6px;
+    --pad-workspace: 4px;
+  }
+
+  .branding__name   { letter-spacing: 1.5px; }
+  .display__number  { letter-spacing: -0.5px; }
+}
+
+/* Portrait: ocultar app, mostrar aviso */
+@media (orientation: portrait) {
+  .portrait-warning { display: flex; }
+  .app              { display: none; }
+}
+
+
+/* ─────────────────────────────────────────────
+   RESPONSIVE — iPad landscape (768px–1180px)
+   ───────────────────────────────────────────── */
+
+@media (min-width: 768px) and (orientation: landscape) {
+  :root {
+    --gap-btn:       6px;
+    --pad-block:     12px;
+    --pad-workspace: 8px;
+  }
+
+  .branding {
+    padding: 0 20px;
+  }
+
+  .display {
+    padding: 6px 20px 8px;
+    gap: 3px;
+  }
+}
+
+
+/* ─────────────────────────────────────────────
+   RESPONSIVE — Escritorio grande (> 1200px)
+   Centra y limita el ancho para no distorsionar
+   ───────────────────────────────────────────── */
+
+@media (min-width: 1200px) {
+  .app {
+    max-width: 1280px;
+    max-height: 800px;
+    margin: auto;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.7);
+  }
+
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #0A0A0A;
+  }
+}
