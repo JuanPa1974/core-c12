@@ -55,8 +55,15 @@
   padding: 0;
 }
 
-html, body {
+html {
   height: 100%;
+  height: -webkit-fill-available; /* iOS Safari: viewport real sin chrome */
+  width: 100%;
+}
+
+body {
+  height: 100%;
+  min-height: -webkit-fill-available;
   width: 100%;
   overflow: hidden;
   background-color: var(--bg-app);
@@ -83,6 +90,7 @@ button {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  height: 100dvh;  /* iOS 15.4+: dynamic viewport, excluye chrome del navegador */
   width: 100vw;
   overflow: hidden;
 }
@@ -576,18 +584,87 @@ button {
 
 
 /* ─────────────────────────────────────────────
-   RESPONSIVE — Móvil landscape (< 768px)
+   RESPONSIVE — Móvil landscape (≤ 767px)
+   Sin vh. Branding y display con px fijos.
+   Workspace toma el espacio restante con flex.
    ───────────────────────────────────────────── */
 
 @media (max-width: 767px) and (orientation: landscape) {
   :root {
-    --gap-btn:    3px;
-    --pad-block:  6px;
+    --gap-btn:       3px;
+    --pad-block:     5px;
     --pad-workspace: 4px;
   }
 
-  .branding__name   { letter-spacing: 1.5px; }
-  .display__number  { letter-spacing: -0.5px; }
+  /* Safe area: notch y barra home en iPhone */
+  .app {
+    padding-left:   env(safe-area-inset-left,   0px);
+    padding-right:  env(safe-area-inset-right,  0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  /* Branding: altura fija mínima, sin vh */
+  .branding {
+    height: 26px;
+    min-height: 26px;
+    padding: 0 10px;
+  }
+
+  .branding__name {
+    font-size: 11px;
+    letter-spacing: 1.5px;
+  }
+
+  .branding__powered {
+    font-size: 9px;
+  }
+
+  /* Display: altura automática por contenido, sin vh */
+  .display {
+    height: auto;
+    min-height: unset;
+    padding: 4px 12px 5px;
+    gap: 1px;
+    flex-shrink: 0;
+  }
+
+  /* Número: tamaño fijo, no depende de vh */
+  .display__number {
+    font-size: 34px;
+    letter-spacing: -0.5px;
+  }
+
+  .display__statusbar {
+    margin-top: 3px;
+    min-height: 20px;
+  }
+
+  .display__status {
+    font-size: 9px;
+    letter-spacing: 1px;
+  }
+
+  .display__detail {
+    font-size: 9px;
+    min-height: 11px;
+  }
+
+  .btn--decimal {
+    width: 22px;
+    height: 22px;
+    font-size: 10px;
+  }
+
+  /* Botones especiales: texto más ajustado en pantalla pequeña */
+  .btn--special {
+    font-size: 10px;
+  }
+
+  /* Botones base: tamaño de fuente fijo */
+  .btn--digit   { font-size: 16px; }
+  .btn--operator { font-size: 18px; }
+  .btn--control  { font-size: 12px; }
+  .btn--equals   { font-size: 20px; }
 }
 
 /* Portrait: ocultar app, mostrar aviso */
