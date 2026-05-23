@@ -397,6 +397,29 @@
     return String(parseFloat(num.toPrecision(10)));
   }
 
+  // Formato visual español/europeo. No altera el valor interno ni la entrada.
+  function formatDisplayNumber(rawValue) {
+    const value = String(rawValue);
+    if (value === 'Error') return value;
+
+    // Mantener seguro cualquier formato inesperado sin afectar cálculos.
+    if (!/^-?\d*\.?\d*$/.test(value)) return value;
+
+    const isNegative = value.startsWith('-');
+    const unsigned   = isNegative ? value.slice(1) : value;
+    const hasDecimal = unsigned.includes('.');
+    const parts      = unsigned.split('.');
+    const integerRaw = parts[0] || '0';
+    const fraction   = parts[1] || '';
+    const grouped    = groupThousands(integerRaw);
+
+    return (isNegative ? '-' : '') + grouped + (hasDecimal ? ',' + fraction : '');
+  }
+
+  function groupThousands(integerPart) {
+    return integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  }
+
   // Símbolo tipográfico del operador (para trazas)
   function opSymbol(op) {
     return { '+': '+', '-': '\u2212', '*': '\u00D7', '/': '\u00F7' }[op] || op;
@@ -420,7 +443,7 @@
       // Entrada manual → mostrar exactamente lo tecleado
       shown = state.displayValue;
     }
-    elNumber.textContent = shown;
+    elNumber.textContent = formatDisplayNumber(shown);
 
     // ── Línea 1: estado abreviado ──
     const parts      = [state.marginStatus, state.ivaStatus].filter(Boolean);

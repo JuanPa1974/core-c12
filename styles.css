@@ -105,6 +105,7 @@ button {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
   flex-shrink: 0;
   height: 6vh;
   min-height: 20px;
@@ -120,14 +121,24 @@ button {
   letter-spacing: 2.5px;
   color: var(--color-text);
   text-transform: uppercase;
+  flex-shrink: 0;
 }
 
 .branding__powered {
-  font-family: var(--font-ui);
-  font-size: clamp(9px, 1.4vh, 12px);
-  font-weight: 400;
-  color: var(--color-text-dim);
-  letter-spacing: 0.3px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 0;
+  flex: 0 1 auto;
+  opacity: 0.96;
+}
+
+.branding__powered img {
+  display: block;
+  width: auto;
+  height: clamp(24px, 4.2vh, 34px);
+  max-width: clamp(190px, 42vw, 330px);
+  object-fit: contain;
 }
 
 
@@ -284,6 +295,7 @@ button {
   flex-direction: row;
   flex: 1;
   min-height: 0;              /* permite que flex-children no desborden */
+  min-width: 0;
   padding: var(--pad-workspace);
   gap: var(--pad-workspace);
   overflow: hidden;
@@ -302,12 +314,14 @@ button {
   flex-direction: column;
   gap: var(--pad-workspace);
   min-height: 0;
+  min-width: 0;
 }
 
 /* Bloque genérico (IVA o Márgenes) */
 .special-block {
   flex: 1;
   min-height: 0;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   position: relative;
@@ -350,11 +364,12 @@ button {
 /* Grid interior del bloque: 3 col × 2 filas */
 .special-block__grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   grid-template-rows: repeat(2, 1fr);
   gap: var(--gap-btn);
   flex: 1;
   min-height: 0;
+  min-width: 0;
 }
 
 
@@ -366,8 +381,9 @@ button {
 .col-right {
   flex: 1;
   min-height: 0;
+  min-width: 0;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   /*
     5 filas iguales (1fr) + fila = (1.2fr → 120% del base)
     Fila 1: C  AC  +/−  %
@@ -402,6 +418,7 @@ button {
   justify-content: center;
   width: 100%;
   height: 100%;
+  min-width: 0;
   border-radius: var(--radius-btn);
   font-family: var(--font-ui);
   font-weight: 600;
@@ -612,6 +629,7 @@ button {
     height: 26px;
     min-height: 26px;
     padding: 0 10px;
+    gap: 8px;
   }
 
   .branding__name {
@@ -620,7 +638,12 @@ button {
   }
 
   .branding__powered {
-    font-size: 9px;
+    opacity: 0.94;
+  }
+
+  .branding__powered img {
+    height: 23px;
+    max-width: 205px;
   }
 
   /* Display: altura automática por contenido, sin vh */
@@ -671,10 +694,348 @@ button {
   .btn--equals   { font-size: 23px; }
 }
 
-/* Portrait: ocultar app, mostrar aviso */
+/* Móvil landscape bajo: prioriza teclado táctil y evita compresión vertical */
+@media (max-width: 767px) and (orientation: landscape) and (max-height: 380px) {
+  :root {
+    --gap-btn:       3px;
+    --pad-block:     4px;
+    --pad-workspace: 3px;
+  }
+
+  .branding {
+    height: 24px;
+    min-height: 24px;
+  }
+
+  .display {
+    padding: 4px 10px 5px;
+    gap: 1px;
+  }
+
+  .display__number {
+    font-size: 38px;
+  }
+
+  .display__statusbar {
+    min-height: 20px;
+    margin-top: 2px;
+  }
+
+  .display__status {
+    font-size: 9px;
+  }
+
+  .display__detail {
+    font-size: 9px;
+    min-height: 11px;
+  }
+
+  .btn--decimal {
+    width: 20px;
+    height: 20px;
+    font-size: 9px;
+  }
+
+  .special-block {
+    padding-top: calc(var(--pad-block) + 5px);
+  }
+
+  .special-block__label {
+    top: -6px;
+    font-size: 8px;
+    letter-spacing: 1.5px;
+  }
+
+  .btn--special {
+    font-size: 10px;
+    line-height: 1.05;
+  }
+
+  .btn--digit    { font-size: 17px; }
+  .btn--operator { font-size: 20px; }
+  .btn--control  { font-size: 12px; }
+  .btn--equals   { font-size: 22px; }
+}
+
+/* Móvil landscape alto: aprovecha aire adicional sin cambiar estructura */
+@media (max-width: 767px) and (orientation: landscape) and (min-height: 430px) {
+  :root {
+    --gap-btn:       4px;
+    --pad-block:     6px;
+    --pad-workspace: 5px;
+  }
+
+  .display {
+    padding: 6px 14px 7px;
+  }
+
+  .display__number {
+    font-size: 46px;
+  }
+
+  .display__detail {
+    font-size: 11px;
+    min-height: 13px;
+  }
+
+  .btn--special {
+    font-size: 12px;
+  }
+}
+
+/* Portrait: app funcional en vertical, sin bloqueo de uso */
 @media (orientation: portrait) {
-  .portrait-warning { display: flex; }
-  .app              { display: none; }
+  :root {
+    --gap-btn:       5px;
+    --pad-block:     8px;
+    --pad-workspace: 8px;
+  }
+
+  .portrait-warning {
+    display: none;
+  }
+
+  .app {
+    display: flex;
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-top:    env(safe-area-inset-top,    0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .branding {
+    height: 34px;
+    min-height: 34px;
+    padding: 0 12px;
+    gap: 8px;
+  }
+
+  .branding__name {
+    font-size: 12px;
+    letter-spacing: 1.8px;
+  }
+
+  .branding__powered {
+    opacity: 0.94;
+  }
+
+  .branding__powered img {
+    height: 25px;
+    max-width: 220px;
+  }
+
+  .display {
+    height: clamp(116px, 18dvh, 145px);
+    min-height: 112px;
+    padding: 8px 14px 9px;
+    gap: 3px;
+  }
+
+  .display__number {
+    font-size: clamp(46px, 8.4dvh, 68px);
+  }
+
+  .display__statusbar {
+    min-height: 23px;
+    margin-top: 4px;
+  }
+
+  .display__status {
+    font-size: 10px;
+  }
+
+  .display__detail {
+    font-size: 11px;
+    min-height: 13px;
+  }
+
+  .workspace {
+    width: calc(100vw - (var(--pad-workspace) * 2));
+    max-width: 100%;
+    flex: 1 0 auto;
+    flex-direction: column;
+    overflow: visible;
+  }
+
+  .col-left {
+    width: 100%;
+    max-width: 100%;
+    align-self: stretch;
+    flex: 0 0 auto;
+    gap: var(--pad-workspace);
+  }
+
+  .special-block,
+  .special-block__grid {
+    max-width: 100%;
+  }
+
+  .special-block {
+    flex: 0 0 auto;
+    min-height: 88px;
+  }
+
+  .special-block__label {
+    font-size: 8px;
+    letter-spacing: 1.7px;
+  }
+
+  .btn--special {
+    font-size: 11px;
+    line-height: 1.05;
+  }
+
+  .col-right {
+    width: 100%;
+    max-width: 100%;
+    align-self: stretch;
+    flex: 0 0 clamp(360px, 52dvh, 430px);
+  }
+
+  .btn--digit    { font-size: 22px; }
+  .btn--operator { font-size: 25px; }
+  .btn--control  { font-size: 14px; }
+  .btn--equals   { font-size: 26px; }
+}
+
+/* Móvil portrait bajo: mantiene todo accesible con desplazamiento mínimo */
+@media (max-width: 767px) and (orientation: portrait) {
+  .workspace {
+    width: 100vw;
+    max-width: 100vw;
+    padding-left: var(--pad-workspace);
+    padding-right: var(--pad-workspace);
+  }
+
+  .col-left,
+  .col-right {
+    width: calc(100vw - (var(--pad-workspace) * 2));
+    max-width: calc(100vw - (var(--pad-workspace) * 2));
+  }
+
+  .special-block__grid {
+    grid-template-columns: repeat(3, calc((100vw - (var(--pad-workspace) * 2) - (var(--pad-block) * 2) - (var(--gap-btn) * 2) - 2px) / 3));
+  }
+
+  .col-right {
+    grid-template-columns: repeat(4, calc((100vw - (var(--pad-workspace) * 2) - (var(--gap-btn) * 3)) / 4));
+  }
+}
+
+/* Móvil portrait bajo: mantiene todo accesible con desplazamiento mínimo */
+@media (max-width: 767px) and (orientation: portrait) and (max-height: 720px) {
+  :root {
+    --gap-btn:       4px;
+    --pad-block:     6px;
+    --pad-workspace: 6px;
+  }
+
+  .branding {
+    height: 30px;
+    min-height: 30px;
+  }
+
+  .display {
+    height: 108px;
+    min-height: 108px;
+    padding: 6px 12px 7px;
+  }
+
+  .display__number {
+    font-size: 42px;
+  }
+
+  .display__statusbar {
+    min-height: 21px;
+    margin-top: 2px;
+  }
+
+  .display__detail {
+    font-size: 10px;
+    min-height: 12px;
+  }
+
+  .special-block {
+    min-height: 78px;
+  }
+
+  .btn--special {
+    font-size: 10px;
+  }
+
+  .col-right {
+    flex-basis: 340px;
+  }
+
+  .btn--digit    { font-size: 20px; }
+  .btn--operator { font-size: 23px; }
+  .btn--control  { font-size: 13px; }
+  .btn--equals   { font-size: 24px; }
+}
+
+/* iPad portrait: módulos comerciales en paralelo y teclado más amplio */
+@media (min-width: 768px) and (orientation: portrait) {
+  :root {
+    --gap-btn:       7px;
+    --pad-block:     12px;
+    --pad-workspace: 10px;
+  }
+
+  .branding {
+    height: 44px;
+    min-height: 44px;
+    padding: 0 22px;
+    gap: 14px;
+  }
+
+  .branding__powered img {
+    height: 34px;
+    max-width: 320px;
+  }
+
+  .display {
+    height: clamp(145px, 17dvh, 180px);
+    padding: 10px 24px 12px;
+  }
+
+  .display__number {
+    font-size: clamp(64px, 7.6dvh, 82px);
+  }
+
+  .workspace {
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .col-left {
+    flex-direction: row;
+    gap: 10px;
+  }
+
+  .special-block {
+    flex: 1 1 0;
+    min-height: 180px;
+  }
+
+  .special-block__label {
+    font-size: 10px;
+  }
+
+  .btn--special {
+    font-size: 15px;
+  }
+
+  .col-right {
+    flex: 1 0 540px;
+  }
+
+  .btn--digit    { font-size: 28px; }
+  .btn--operator { font-size: 32px; }
+  .btn--control  { font-size: 18px; }
+  .btn--equals   { font-size: 34px; }
 }
 
 
@@ -696,6 +1057,28 @@ button {
   .display {
     padding: 8px 22px 10px;
     gap: 3px;
+  }
+}
+
+/* iPad landscape bajo / tablets compactas: protege la altura del teclado */
+@media (min-width: 768px) and (max-width: 1180px) and (orientation: landscape) and (max-height: 700px) {
+  .display {
+    height: clamp(104px, 21vh, 132px);
+    min-height: 96px;
+    padding: 6px 20px 8px;
+  }
+
+  .display__number {
+    font-size: clamp(42px, 6.4vh, 64px);
+  }
+
+  .display__statusbar {
+    min-height: clamp(18px, 2.4vh, 22px);
+  }
+
+  .display__detail {
+    font-size: clamp(11px, 1.6vh, 13px);
+    min-height: clamp(13px, 1.8vh, 16px);
   }
 }
 
