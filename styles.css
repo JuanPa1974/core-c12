@@ -142,10 +142,10 @@ button {
   justify-content: flex-end;
   align-items: stretch;
   flex-shrink: 0;
-  height: 21vh;
-  min-height: 80px;
-  padding: 4px 14px 6px;
-  gap: 2px;
+  height: clamp(96px, 23vh, 150px);
+  min-height: 90px;
+  padding: 7px 16px 9px;
+  gap: 3px;
   background-color: var(--bg-display);
   border-bottom: 1px solid var(--color-sep);
 }
@@ -153,12 +153,12 @@ button {
 /* Número principal */
 .display__number {
   font-family: var(--font-display);
-  font-size: clamp(28px, 5.5vh, 58px);
+  font-size: clamp(40px, 7.1vh, 76px);
   font-weight: 300;
   color: var(--color-text);
   text-align: right;
-  line-height: 1;
-  letter-spacing: -1px;
+  line-height: 0.95;
+  letter-spacing: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -172,18 +172,18 @@ button {
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  min-height: clamp(14px, 2.2vh, 18px);
+  min-height: clamp(18px, 2.6vh, 24px);
   flex-shrink: 0;
-  margin-top: 6px;   /* separa el selector del número principal */
+  margin-top: 5px;   /* separa el selector del número principal */
 }
 
 /* Estado abreviado — Línea 1 */
 .display__status {
   font-family: var(--font-display);
-  font-size: clamp(9px, 1.4vh, 11px);
-  font-weight: 400;
+  font-size: clamp(10px, 1.7vh, 13px);
+  font-weight: 600;
   text-align: left;
-  letter-spacing: 1.5px;
+  letter-spacing: 1px;
   text-transform: uppercase;
   color: transparent;
   line-height: 1;
@@ -254,23 +254,23 @@ button {
 /* Detalle de operación — Línea 2 */
 .display__detail {
   font-family: var(--font-display);
-  font-size: clamp(9px, 1.3vh, 11px);
+  font-size: clamp(11px, 1.7vh, 14px);
   font-weight: 400;
   text-align: left;
   color: transparent;
-  letter-spacing: 0.3px;
-  line-height: 1;
+  letter-spacing: 0;
+  line-height: 1.15;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   width: 100%;
-  min-height: clamp(10px, 1.6vh, 13px);
+  min-height: clamp(13px, 2vh, 17px);
   flex-shrink: 0;
   transition: color 150ms ease;
 }
 
 .display__detail.is-visible {
-  color: rgba(255, 255, 255, 0.38);
+  color: rgba(255, 255, 255, 0.62);
 }
 
 
@@ -405,6 +405,7 @@ button {
   border-radius: var(--radius-btn);
   font-family: var(--font-ui);
   font-weight: 600;
+  line-height: 1;
   color: var(--color-text);
   background-color: var(--bg-btn-digit);
   transition:
@@ -429,13 +430,15 @@ button {
 /* Dígitos: 0–9 y punto decimal */
 .btn--digit {
   background-color: var(--bg-btn-digit);
-  font-size: clamp(14px, 2.6vh, 20px);
+  font-size: clamp(16px, 3vh, 23px);
+  font-weight: 650;
 }
 
 /* Operadores: ÷ × − + */
 .btn--operator {
   background-color: var(--bg-btn-digit);
-  font-size: clamp(16px, 3vh, 22px);
+  font-size: clamp(19px, 3.5vh, 27px);
+  font-weight: 600;
 }
 
 .btn--operator:active {
@@ -445,7 +448,8 @@ button {
 /* Control: C, AC, +/−, % */
 .btn--control {
   background-color: var(--bg-btn-control);
-  font-size: clamp(11px, 2vh, 16px);
+  font-size: clamp(12px, 2.2vh, 17px);
+  font-weight: 650;
   letter-spacing: 0.3px;
 }
 
@@ -465,9 +469,9 @@ button {
 /* Botón = : dominante, color diferenciado */
 .btn--equals {
   background-color: var(--bg-btn-equals);
-  font-size: clamp(18px, 3.5vh, 28px);
+  font-size: clamp(21px, 4vh, 32px);
   font-weight: 700;
-  letter-spacing: 2px;
+  letter-spacing: 1.5px;
   border-radius: var(--radius-btn);
 }
 
@@ -484,10 +488,10 @@ button {
 /* Base común para IVA y Márgenes */
 .btn--special {
   background-color: var(--bg-btn-special);
-  font-size: clamp(10px, 1.7vh, 14px);
-  font-weight: 500;
+  font-size: clamp(11px, 1.9vh, 15px);
+  font-weight: 600;
   border-radius: var(--radius-btn-sm);
-  line-height: 1.2;
+  line-height: 1.1;
   text-align: center;
 }
 
@@ -623,30 +627,30 @@ button {
   .display {
     height: auto;
     min-height: unset;
-    padding: 4px 12px 5px;
-    gap: 1px;
+    padding: 5px 12px 6px;
+    gap: 2px;
     flex-shrink: 0;
   }
 
   /* Número: tamaño fijo, no depende de vh */
   .display__number {
-    font-size: 34px;
-    letter-spacing: -0.5px;
+    font-size: 42px;
+    letter-spacing: 0;
   }
 
   .display__statusbar {
-    margin-top: 3px;
-    min-height: 20px;
+    margin-top: 4px;
+    min-height: 22px;
   }
 
   .display__status {
-    font-size: 9px;
+    font-size: 10px;
     letter-spacing: 1px;
   }
 
   .display__detail {
-    font-size: 9px;
-    min-height: 11px;
+    font-size: 10px;
+    min-height: 12px;
   }
 
   .btn--decimal {
@@ -657,14 +661,14 @@ button {
 
   /* Botones especiales: texto más ajustado en pantalla pequeña */
   .btn--special {
-    font-size: 10px;
+    font-size: 11px;
   }
 
   /* Botones base: tamaño de fuente fijo */
-  .btn--digit   { font-size: 16px; }
-  .btn--operator { font-size: 18px; }
-  .btn--control  { font-size: 12px; }
-  .btn--equals   { font-size: 20px; }
+  .btn--digit    { font-size: 18px; }
+  .btn--operator { font-size: 21px; }
+  .btn--control  { font-size: 13px; }
+  .btn--equals   { font-size: 23px; }
 }
 
 /* Portrait: ocultar app, mostrar aviso */
@@ -690,7 +694,7 @@ button {
   }
 
   .display {
-    padding: 6px 20px 8px;
+    padding: 8px 22px 10px;
     gap: 3px;
   }
 }
