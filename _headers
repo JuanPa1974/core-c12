@@ -1,0 +1,27 @@
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=(), microphone=(), camera=()
+
+/
+  Cache-Control: no-cache, max-age=0, must-revalidate
+
+/index.html
+  Cache-Control: no-cache, max-age=0, must-revalidate
+
+/service-worker.js
+  Cache-Control: no-cache, max-age=0, must-revalidate
+  Service-Worker-Allowed: /
+
+/manifest.webmanifest
+  Cache-Control: public, max-age=86400
+  Content-Type: application/manifest+json; charset=utf-8
+
+/styles.css
+  Cache-Control: public, max-age=3600, must-revalidate
+
+/calc.js
+  Cache-Control: public, max-age=3600, must-revalidate
+
+/icons/*
+  Cache-Control: public, max-age=604800
