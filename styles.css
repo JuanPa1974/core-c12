@@ -1060,6 +1060,14 @@ button {
   }
 }
 
+/* Mobile landscape ancho: separa el header de bordes/notch sin alterar la UI */
+@media (min-width: 768px) and (max-height: 500px) and (orientation: landscape) {
+  .branding {
+    padding-left: calc(env(safe-area-inset-left, 0px) + 28px);
+    padding-right: calc(env(safe-area-inset-right, 0px) + 28px);
+  }
+}
+
 /* iPad landscape bajo / tablets compactas: protege la altura del teclado */
 @media (min-width: 768px) and (max-width: 1180px) and (orientation: landscape) and (max-height: 700px) {
   .display {
