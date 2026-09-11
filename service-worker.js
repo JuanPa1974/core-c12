@@ -10,7 +10,14 @@
 // nuevo (o viceversa) rompería el arranque completo de la app, no solo la
 // función nueva. Los iconos de esta fase son SVG inline en index.html —
 // no se añaden archivos nuevos al app shell.
-const CACHE_VERSION = 'core-c12-v2-pwa-4';
+//
+// Bumped -pwa-4 -> -pwa-5: identidad PWA completa (Fase 3). manifest.
+// webmanifest cambia de nombre/iconos, index.html referencia icons/
+// nuevos (apple-touch-icon.png, core-c12-icon-192.png) y el favicon SVG
+// pasa de placeholder al icono maestro aprobado — todos deben quedar en
+// el app shell para instalación/offline correctos. El maskable SVG viejo
+// se retira (sustituido por el PNG maskable aprobado).
+const CACHE_VERSION = 'core-c12-v2-pwa-5';
 const APP_SHELL_CACHE = CACHE_VERSION + '-app-shell';
 
 const APP_SHELL_ASSETS = [
@@ -21,7 +28,10 @@ const APP_SHELL_ASSETS = [
   '/calc.js',
   '/manifest.webmanifest',
   '/icons/core-c12-icon.svg',
-  '/icons/core-c12-maskable.svg'
+  '/icons/core-c12-icon-192.png',
+  '/icons/core-c12-icon-512.png',
+  '/icons/core-c12-maskable-512.png',
+  '/icons/apple-touch-icon.png'
 ];
 
 self.addEventListener('install', event => {
