@@ -1,14 +1,37 @@
-const CACHE_VERSION = 'core-c12-v2-pwa-1';
+// Bumped -pwa-2 -> -pwa-3: nuevo config.js entra en el app shell (Fase 2A,
+// configuracion persistente de tasas/margenes/decimales) e index.html ahora
+// lo referencia antes de calc.js. Sin este bump, una PWA ya instalada podria
+// servir calc.js nuevo con config.js ausente desde el cache previo.
+//
+// Bumped -pwa-3 -> -pwa-4: edicion configurable de IVA/margen (Fase 2B).
+// El nuevo calc.js hace document.getElementById() sobre elementos que solo
+// existen en el index.html nuevo (tax-block-label, tax-edit-actions, etc.);
+// sin este bump, una combinacion cacheada de index.html viejo + calc.js
+// nuevo (o viceversa) rompería el arranque completo de la app, no solo la
+// función nueva. Los iconos de esta fase son SVG inline en index.html —
+// no se añaden archivos nuevos al app shell.
+//
+// Bumped -pwa-4 -> -pwa-5: identidad PWA completa (Fase 3). manifest.
+// webmanifest cambia de nombre/iconos, index.html referencia icons/
+// nuevos (apple-touch-icon.png, core-c12-icon-192.png) y el favicon SVG
+// pasa de placeholder al icono maestro aprobado — todos deben quedar en
+// el app shell para instalación/offline correctos. El maskable SVG viejo
+// se retira (sustituido por el PNG maskable aprobado).
+const CACHE_VERSION = 'core-c12-v2-pwa-5';
 const APP_SHELL_CACHE = CACHE_VERSION + '-app-shell';
 
 const APP_SHELL_ASSETS = [
   '/',
   '/index.html',
   '/styles.css',
+  '/config.js',
   '/calc.js',
   '/manifest.webmanifest',
   '/icons/core-c12-icon.svg',
-  '/icons/core-c12-maskable.svg'
+  '/icons/core-c12-icon-192.png',
+  '/icons/core-c12-icon-512.png',
+  '/icons/core-c12-maskable-512.png',
+  '/icons/apple-touch-icon.png'
 ];
 
 self.addEventListener('install', event => {
