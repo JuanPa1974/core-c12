@@ -38,6 +38,14 @@
 
     // Línea de detalle (trace de la operación)
     detailText:        '',
+
+    // Fase 2B — edición configurable de IVA / margen (misma pantalla)
+    editMode:               null,  // null | 'tax' | 'margin'
+    editingIndex:            null,  // null | posición seleccionada (0-2 IVA, 0-5 margen)
+    editBuffer:              '',    // string en construcción para la nueva tasa
+    editBufferFresh:         false, // true: el próximo dígito reemplaza el buffer (recién seleccionado)
+    editError:               '',    // mensaje de validación breve, se limpia al reanudar tecleo
+    editResetConfirmPending: false, // true tras el primer toque en RESTABLECER (confirmación en 2 toques)
   };
 
 
@@ -48,6 +56,14 @@
   const elNumber = document.getElementById('display-number');
   const elStatus = document.getElementById('display-status');
   const elDetail = document.getElementById('display-detail');
+
+  // Fase 2B — cabeceras y fila de acciones de edición
+  const elTaxLabel          = document.getElementById('tax-block-label');
+  const elMarginLabel       = document.getElementById('margin-block-label');
+  const elTaxEditActions    = document.getElementById('tax-edit-actions');
+  const elMarginEditActions = document.getElementById('margin-edit-actions');
+  const elTaxResetLabel     = document.getElementById('tax-reset-label');
+  const elMarginResetLabel  = document.getElementById('margin-reset-label');
 
 
   /* ─────────────────────────────────────────────
@@ -109,12 +125,28 @@
       case 'all-clear':        clearAll();                                    break;
       case 'sign':             toggleSign();                                  break;
       case 'percent':          inputPercent();                                break;
-      case 'margin-rate':      applyMargin(rateNum, btn);                break;
+      case 'margin-rate':
+        // Edición IVA activa -> margen queda bloqueado por completo (no-op)
+        if (state.editMode === 'margin') selectEditPosition('margin', rateButtonIndex(btn, 'margin-rate'), btn);
+        else if (state.editMode === null) applyMargin(rateNum, btn);
+        break;
       case 'margin-direction': setMarginDirection(btn.dataset.direction); break;
-      case 'tax-rate':         applyTax(rateNum);                        break;
+      case 'tax-rate':
+        // Edición margen activa -> IVA queda bloqueado por completo (no-op)
+        if (state.editMode === 'tax') selectEditPosition('tax', rateButtonIndex(btn, 'tax-rate'), btn);
+        else if (state.editMode === null) applyTax(rateNum);
+        break;
       case 'tax-direction':    setTaxDirection(btn.dataset.direction);    break;
       // data-decimals, no data-rate
       case 'set-decimals': setDecimals(parseInt(btn.dataset.decimals, 10)); break;
+
+      // Fase 2B — edición configurable de IVA / margen
+      case 'edit-tax':         enterEditMode('tax');       break;
+      case 'edit-margin':      enterEditMode('margin');    break;
+      case 'edit-done-tax':    exitEditMode();              break;
+      case 'edit-done-margin': exitEditMode();              break;
+      case 'reset-tax':        handleResetRates('tax');    break;
+      case 'reset-margin':     handleResetRates('margin'); break;
     }
   }
 
@@ -124,6 +156,8 @@
      ───────────────────────────────────────────── */
 
   function inputDigit(digit) {
+    if (state.editMode !== null) { editInputDigit(digit); return; }
+
     if (state.waitingForOperand) {
       state.displayValue      = digit;
       state.waitingForOperand = false;
@@ -149,6 +183,8 @@
   }
 
   function inputDecimal() {
+    if (state.editMode !== null) { editInputDecimal(); return; }
+
     if (state.waitingForOperand) {
       state.displayValue      = '0.';
       state.waitingForOperand = false;
@@ -171,6 +207,7 @@
      ───────────────────────────────────────────── */
 
   function inputOperator(op) {
+    if (state.editMode !== null) return;
     if (state.displayValue === 'Error') return;
 
     const current = parseFloat(state.displayValue);
@@ -204,6 +241,8 @@
   }
 
   function calculate() {
+    if (state.editMode !== null) { editConfirmPosition(); return; }
+
     if (state.operator === null || state.previousValue === null) return;
     if (state.displayValue === 'Error') return;
 
@@ -246,6 +285,8 @@
 
   // C — borrar último dígito (o limpiar resultado)
   function clearLast() {
+    if (state.editMode !== null) { editBackspace(); return; }
+
     if (state.waitingForOperand || state.displayValue === 'Error') {
       state.displayValue      = '0';
       state.waitingForOperand = false;
@@ -263,6 +304,8 @@
 
   // AC — reset total (decimals se conserva)
   function clearAll() {
+    if (state.editMode !== null) { editCancelPosition(); return; }
+
     state.displayValue      = '0';
     state.previousValue     = null;
     state.operator          = null;
@@ -286,6 +329,7 @@
      ───────────────────────────────────────────── */
 
   function toggleSign() {
+    if (state.editMode !== null) return;
     if (state.displayValue === '0' || state.displayValue === 'Error') return;
 
     if (state.isResult && state.rawResult !== null) {
@@ -300,6 +344,7 @@
   }
 
   function inputPercent() {
+    if (state.editMode !== null) return;
     if (state.displayValue === 'Error') return;
 
     const num          = parseFloat(state.displayValue);
@@ -367,6 +412,7 @@
 
   // Cambia el modo +M/−M. No calcula, no altera el display.
   function setMarginDirection(direction) {
+    if (state.editMode !== null) return;
     if (direction !== 'forward' && direction !== 'reverse') return;
     state.marginDirection = direction;
     renderMarginDirectionButtons();
@@ -414,6 +460,7 @@
 
   // Cambia el modo +IVA/−IVA. No calcula, no altera el display.
   function setTaxDirection(direction) {
+    if (state.editMode !== null) return;
     if (direction !== 'add' && direction !== 'remove') return;
     state.taxDirection = direction;
     renderTaxDirectionButtons();
@@ -445,6 +492,7 @@
      ───────────────────────────────────────────── */
 
   function setDecimals(n) {
+    if (state.editMode !== null) return;
     state.decimals = n;
     CoreC12Config.updateDecimals(n); // persiste; no-op seguro si localStorage falla
 
@@ -503,6 +551,8 @@
      ───────────────────────────────────────────── */
 
   function updateDisplay() {
+    if (state.editMode !== null) { renderEditDisplay(); return; }
+
     // ── Número principal ──
     let shown;
     if (state.displayValue === 'Error') {
@@ -580,6 +630,278 @@
     document.querySelectorAll('[data-action="margin-rate"]').forEach(btn => {
       btn.textContent = sign + CoreC12Config.formatRate(btn.dataset.rate);
     });
+  }
+
+
+  /* ─────────────────────────────────────────
+     EDICIÓN CONFIGURABLE DE IVA / MARGEN — Fase 2B
+     Reutiliza el teclado numérico existente (0-9, ., C, AC, =) y la API
+     de configuración ya disponible (CoreC12Config) — sin lógica paralela
+     de validación, defaults, rangos ni persistencia. Todo ocurre en la
+     misma pantalla: no se crea vista, modal ni teclado nuevos.
+     ───────────────────────────────────────── */
+
+  function enterEditMode(mode) {
+    if (state.editMode !== null) return; // ya en edición: ignorar re-entrada
+    state.editMode = mode;
+    resetEditPositionState();
+    renderEditChrome();
+    updateDisplay();
+  }
+
+  function exitEditMode() {
+    if (state.editMode === null) return;
+    const mode = state.editMode;
+    state.editMode = null;
+    resetEditPositionState();
+    renderEditChrome();
+    if (mode === 'tax') renderTaxRateLabels(); else renderMarginRateLabels();
+    syncActiveMarginButtonFromState();
+    updateDisplay();
+  }
+
+  // Limpia posición/buffer/error/confirmación de reset. Usado al entrar,
+  // cancelar (AC), guardar (=) o salir (LISTO) del modo edición.
+  function resetEditPositionState() {
+    state.editingIndex            = null;
+    state.editBuffer              = '';
+    state.editBufferFresh         = false;
+    state.editError               = '';
+    state.editResetConfirmPending = false;
+  }
+
+  // Selecciona una posición dentro del módulo en edición: carga su valor
+  // actual en el buffer (el primer dígito tecleado lo reemplaza por
+  // completo, como el resto de la calculadora tras un operador).
+  function selectEditPosition(mode, index, btn) {
+    if (state.editMode !== mode || state.editingIndex !== null) return;
+
+    const config = CoreC12Config.getConfig();
+    const rates  = mode === 'tax' ? config.taxRates : config.marginRates;
+    if (index < 0 || index >= rates.length) return;
+
+    state.editingIndex            = index;
+    state.editBuffer              = String(rates[index]);
+    state.editBufferFresh         = true;
+    state.editError               = '';
+    state.editResetConfirmPending = false;
+
+    if (mode === 'tax') setActiveTaxEditButton(btn); else setActiveMarginButton(btn);
+    renderEditChrome();
+    updateDisplay();
+  }
+
+  function editInputDigit(digit) {
+    if (state.editingIndex === null) return; // sin posición seleccionada: no-op
+    state.editBuffer      = state.editBufferFresh ? digit : state.editBuffer + digit;
+    state.editBufferFresh = false;
+    state.editError        = '';
+    updateDisplay();
+  }
+
+  function editInputDecimal() {
+    if (state.editingIndex === null) return;
+    if (state.editBufferFresh) {
+      state.editBuffer      = '0.';
+      state.editBufferFresh = false;
+    } else if (!state.editBuffer.includes('.')) {
+      state.editBuffer += '.';
+    }
+    state.editError = '';
+    updateDisplay();
+  }
+
+  // C — borra el último carácter del buffer de edición (no toca el resto de la app)
+  function editBackspace() {
+    if (state.editingIndex === null) return;
+    state.editBuffer = state.editBuffer.length > 1 ? state.editBuffer.slice(0, -1) : '';
+    state.editBufferFresh = false;
+    state.editError = '';
+    updateDisplay();
+  }
+
+  // AC — cancela la posición en edición (sin guardar) y permanece en el módulo
+  function editCancelPosition() {
+    if (state.editingIndex === null) return; // nada que cancelar: no-op
+    resetEditPositionState();
+    if (state.editMode === 'tax') setActiveTaxEditButton(null); else syncActiveMarginButtonFromState();
+    renderEditChrome();
+    updateDisplay();
+  }
+
+  // = — valida y guarda la posición en edición usando exclusivamente las
+  // reglas y la persistencia ya existentes en config.js (validateTaxRates/
+  // validateMarginRates/updateTaxRates/updateMarginRates). Nunca reescribe
+  // rangos, límite de decimales o duplicados: solo interpreta el resultado
+  // de esa validación para elegir el mensaje breve a mostrar.
+  function editConfirmPosition() {
+    if (state.editingIndex === null) return; // nada que confirmar: no-op
+
+    const mode      = state.editMode;
+    const candidate = state.editBuffer === '' ? NaN : Number(state.editBuffer);
+
+    if (!Number.isFinite(candidate)) { setEditError('VALOR INVÁLIDO'); return; }
+
+    const config       = CoreC12Config.getConfig();
+    const currentRates = mode === 'tax' ? config.taxRates : config.marginRates;
+    const isDuplicate   = currentRates.some((r, i) => i !== state.editingIndex && r === candidate);
+
+    if (isDuplicate) { setEditError('DUPLICADO'); return; }
+
+    const proposed = currentRates.slice();
+    proposed[state.editingIndex] = candidate;
+
+    const isValid = mode === 'tax'
+      ? CoreC12Config.validateTaxRates(proposed)
+      : CoreC12Config.validateMarginRates(proposed);
+
+    if (!isValid) {
+      const min = mode === 'tax' ? CoreC12Config.TAX_RATE_MIN : CoreC12Config.MARGIN_RATE_MIN;
+      const max = mode === 'tax' ? CoreC12Config.TAX_RATE_MAX : CoreC12Config.MARGIN_RATE_MAX;
+      setEditError('RANGO ' + min + '–' + max);
+      return;
+    }
+
+    if (mode === 'tax') CoreC12Config.updateTaxRates(proposed);
+    else CoreC12Config.updateMarginRates(proposed);
+
+    applyConfiguredRates(CoreC12Config.getConfig());
+    resetEditPositionState();
+    if (mode === 'tax') { setActiveTaxEditButton(null); renderEditRateLabels('tax'); }
+    else { syncActiveMarginButtonFromState(); renderEditRateLabels('margin'); }
+    renderEditChrome();
+    updateDisplay();
+  }
+
+  function setEditError(message) {
+    state.editError = message;
+    updateDisplay();
+  }
+
+  // RESTABLECER — confirmación en dos toques sobre el propio botón.
+  // Usa getDefaults() como única fuente de los valores predeterminados.
+  function handleResetRates(mode) {
+    if (state.editMode !== mode) return;
+
+    if (!state.editResetConfirmPending) {
+      state.editResetConfirmPending = true;
+      renderEditChrome();
+      return;
+    }
+
+    state.editResetConfirmPending = false;
+    const defaults = CoreC12Config.getDefaults();
+    if (mode === 'tax') CoreC12Config.updateTaxRates(defaults.taxRates);
+    else CoreC12Config.updateMarginRates(defaults.marginRates);
+
+    applyConfiguredRates(CoreC12Config.getConfig());
+    resetEditPositionState();
+    if (mode === 'tax') { setActiveTaxEditButton(null); renderEditRateLabels('tax'); }
+    else { syncActiveMarginButtonFromState(); renderEditRateLabels('margin'); }
+    renderEditChrome();
+    updateDisplay();
+  }
+
+  // Resalta la posición de IVA en edición (no existe fuera de edición:
+  // a diferencia del margen, el flujo normal de IVA no fija un "último
+  // botón pulsado").
+  function setActiveTaxEditButton(activeBtn) {
+    document.querySelectorAll('[data-action="tax-rate"]').forEach(btn => {
+      btn.classList.remove('is-active');
+    });
+    if (activeBtn) activeBtn.classList.add('is-active');
+  }
+
+  // Restaura el resaltado normal de margen (state.activeMargin) tras salir
+  // de edición o cancelar/guardar una posición — reutiliza las mismas
+  // funciones que ya gestionan ese resaltado fuera de edición.
+  function syncActiveMarginButtonFromState() {
+    clearActiveMarginButton();
+    if (state.activeMargin === null) return;
+    document.querySelectorAll('[data-action="margin-rate"]').forEach(btn => {
+      if (Number(btn.dataset.rate) === state.activeMargin) setActiveMarginButton(btn);
+    });
+  }
+
+  // Rótulos sin signo ("21%") mientras el módulo está en edición — el
+  // signo +/− solo aplica a la calculadora, no a la edición de tasas.
+  function renderEditRateLabels(mode) {
+    const action = mode === 'tax' ? 'tax-rate' : 'margin-rate';
+    document.querySelectorAll('[data-action="' + action + '"]').forEach(btn => {
+      btn.textContent = CoreC12Config.formatRate(btn.dataset.rate);
+    });
+  }
+
+  function rateButtonIndex(btn, action) {
+    return Array.from(document.querySelectorAll('[data-action="' + action + '"]')).indexOf(btn);
+  }
+
+  function setDisabled(selector, disabled) {
+    document.querySelectorAll(selector).forEach(btn => { btn.disabled = disabled; });
+  }
+
+  // Cabeceras, fila de acciones y deshabilitado de controles — todo lo que
+  // no depende del contenido del display (ver renderEditDisplay).
+  function renderEditChrome() {
+    const taxEditing    = state.editMode === 'tax';
+    const marginEditing = state.editMode === 'margin';
+    const anyEditing    = state.editMode !== null;
+
+    elTaxLabel.textContent    = taxEditing    ? 'EDITAR IVA'      : 'IVA';
+    elMarginLabel.textContent = marginEditing ? 'EDITAR MÁRGENES' : 'MARGEN';
+
+    elTaxEditActions.hidden    = !taxEditing;
+    elMarginEditActions.hidden = !marginEditing;
+
+    elTaxResetLabel.textContent    = (taxEditing    && state.editResetConfirmPending) ? '¿CONFIRMAR?' : 'RESTABLECER';
+    elMarginResetLabel.textContent = (marginEditing && state.editResetConfirmPending) ? '¿CONFIRMAR?' : 'RESTABLECER';
+
+    document.querySelectorAll('[data-action="reset-tax"]').forEach(btn => {
+      btn.classList.toggle('is-confirming', taxEditing && state.editResetConfirmPending);
+    });
+    document.querySelectorAll('[data-action="reset-margin"]').forEach(btn => {
+      btn.classList.toggle('is-confirming', marginEditing && state.editResetConfirmPending);
+    });
+
+    // Rótulos de tasa: planos en el módulo que se edita, con signo en el resto
+    if (taxEditing)    renderEditRateLabels('tax');    else renderTaxRateLabels();
+    if (marginEditing) renderEditRateLabels('margin'); else renderMarginRateLabels();
+
+    const taxRateDisabled    = marginEditing || (taxEditing    && state.editingIndex !== null);
+    const marginRateDisabled = taxEditing    || (marginEditing && state.editingIndex !== null);
+
+    setDisabled('[data-action="tax-rate"]',        taxRateDisabled);
+    setDisabled('[data-action="margin-rate"]',      marginRateDisabled);
+    setDisabled('[data-action="tax-direction"]',    anyEditing);
+    setDisabled('[data-action="margin-direction"]', anyEditing);
+    setDisabled('[data-action="operator"]',         anyEditing);
+    setDisabled('[data-action="sign"]',              anyEditing);
+    setDisabled('[data-action="percent"]',           anyEditing);
+    setDisabled('[data-action="set-decimals"]',      anyEditing);
+    setDisabled('[data-action="edit-tax"]',          anyEditing);
+    setDisabled('[data-action="edit-margin"]',       anyEditing);
+  }
+
+  // Línea de display mientras editMode !== null: sustituye por completo
+  // la ruta normal de updateDisplay (ver el early-return al inicio).
+  function renderEditDisplay() {
+    if (state.editingIndex !== null) {
+      elNumber.textContent = formatDisplayNumber(state.editBuffer);
+
+      const posLabel = state.editMode === 'tax' ? 'EDITAR IVA ' : 'EDITAR MARGEN ';
+      elStatus.textContent = posLabel + (state.editingIndex + 1);
+      elStatus.classList.toggle('is-visible', true);
+
+      elDetail.textContent = state.editError;
+      elDetail.classList.toggle('is-visible', state.editError.length > 0);
+    } else {
+      // Módulo en edición sin posición seleccionada: número principal
+      // congelado (última cifra real), líneas 1 y 2 en blanco.
+      elStatus.textContent = '';
+      elStatus.classList.toggle('is-visible', false);
+      elDetail.textContent = '';
+      elDetail.classList.toggle('is-visible', false);
+    }
   }
 
 

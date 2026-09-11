@@ -2,7 +2,15 @@
 // configuracion persistente de tasas/margenes/decimales) e index.html ahora
 // lo referencia antes de calc.js. Sin este bump, una PWA ya instalada podria
 // servir calc.js nuevo con config.js ausente desde el cache previo.
-const CACHE_VERSION = 'core-c12-v2-pwa-3';
+//
+// Bumped -pwa-3 -> -pwa-4: edicion configurable de IVA/margen (Fase 2B).
+// El nuevo calc.js hace document.getElementById() sobre elementos que solo
+// existen en el index.html nuevo (tax-block-label, tax-edit-actions, etc.);
+// sin este bump, una combinacion cacheada de index.html viejo + calc.js
+// nuevo (o viceversa) rompería el arranque completo de la app, no solo la
+// función nueva. Los iconos de esta fase son SVG inline en index.html —
+// no se añaden archivos nuevos al app shell.
+const CACHE_VERSION = 'core-c12-v2-pwa-4';
 const APP_SHELL_CACHE = CACHE_VERSION + '-app-shell';
 
 const APP_SHELL_ASSETS = [

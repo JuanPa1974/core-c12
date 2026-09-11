@@ -421,6 +421,147 @@ button {
   }
 }
 
+/* ─────────────────────────────────────────────
+   EDICIÓN CONFIGURABLE DE IVA / MÁRGENES — Fase 2B
+   Icono de entrada (sliders) en la cabecera del bloque,
+   y fila de acciones (RESTABLECER / LISTO) visible solo
+   durante editMode del módulo correspondiente.
+   ───────────────────────────────────────────── */
+
+/* Icono de entrada a edición — discreto, circular, currentColor real
+   (SVG inline heredado del sistema de iconos aprobado) */
+.btn--icon-config {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  margin-left: 2px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: transparent;
+  color: rgba(255, 255, 255, 0.42);
+  transition: color 100ms ease, background-color 100ms ease, transform 80ms ease;
+}
+
+.icon-config {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+.btn--icon-config:active {
+  background-color: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.9);
+  transform: scale(0.92);
+}
+
+.btn--icon-config:disabled {
+  opacity: 0.22;
+  pointer-events: none;
+}
+
+@media (hover: hover) {
+  .btn--icon-config:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.75);
+  }
+}
+
+/* Fila de acciones de edición: RESTABLECER + LISTO. Ocupa el mismo
+   espacio vertical que perdería el grid inferior (flex:1; min-height:0
+   ya presente en .special-block__grid absorbe la diferencia). */
+.special-block__edit-actions {
+  display: flex;
+  gap: var(--gap-btn);
+  flex-shrink: 0;
+  margin-bottom: 5px;
+  height: clamp(24px, 3.4vh, 32px);
+}
+
+.special-block__edit-actions[hidden] {
+  display: none;
+}
+
+.btn--edit-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+  border-radius: var(--radius-btn-sm);
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: clamp(9px, 1.5vh, 11px);
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  color: rgba(255, 255, 255, 0.55);
+  transition: color 100ms ease, background-color 100ms ease, border-color 100ms ease;
+}
+
+.icon-edit-action {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+}
+
+.btn--edit-reset {
+  flex: 1.3;
+  background-color: rgba(224, 60, 60, 0.08);
+  border-color: rgba(224, 60, 60, 0.30);
+  color: rgba(224, 120, 120, 0.85);
+}
+
+.btn--edit-reset.is-confirming {
+  background-color: rgba(224, 60, 60, 0.22);
+  border-color: #E03C3C;
+  color: #FFAFAF;
+}
+
+.btn--edit-done {
+  background-color: rgba(70, 140, 210, 0.12);
+  border-color: rgba(70, 140, 210, 0.4);
+  color: #9FC7EC;
+}
+
+.btn--edit-action:active {
+  transform: scale(0.96);
+}
+
+.btn--edit-action:disabled {
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+@media (hover: hover) {
+  .btn--edit-reset:hover {
+    background-color: rgba(224, 60, 60, 0.16);
+  }
+  .btn--edit-done:hover {
+    background-color: rgba(70, 140, 210, 0.20);
+  }
+}
+
+/* Posición seleccionada dentro de edición de IVA (equivalente al
+   resaltado ya existente para margen activo) */
+.btn--iva.is-active {
+  background-color: #2E2200;
+  border: 1px solid var(--color-iva);
+  color: var(--color-iva);
+}
+
+@media (hover: hover) {
+  .btn--iva.is-active:hover {
+    background-color: #3A2C00;
+  }
+}
+
+
 /* Grid interior del bloque: 3 col × 2 filas (margen, 6 posiciones) */
 .special-block__grid {
   display: grid;
@@ -502,6 +643,17 @@ button {
 .btn:active {
   background-color: #444444;
   transform: scale(0.95);
+}
+
+/* Deshabilitado durante editMode (Fase 2B): el atributo disabled real ya
+   bloquea clic/foco; aquí solo se refuerza visualmente sin depender del
+   color como único indicador (opacidad + cursor). */
+.btn:disabled,
+.btn--direction:disabled,
+.btn--decimal:disabled {
+  opacity: 0.30;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
 
@@ -747,6 +899,29 @@ button {
     font-size: 10px;
   }
 
+  .btn--icon-config {
+    width: 30px;
+    height: 30px;
+  }
+
+  .icon-config {
+    width: 14px;
+    height: 14px;
+  }
+
+  .special-block__edit-actions {
+    height: 22px;
+  }
+
+  .btn--edit-action {
+    font-size: 9px;
+  }
+
+  .icon-edit-action {
+    width: 11px;
+    height: 11px;
+  }
+
   /* Botones especiales: texto más ajustado en pantalla pequeña */
   .btn--special {
     font-size: 11px;
@@ -814,6 +989,31 @@ button {
     height: 16px;
     padding: 0 5px;
     font-size: 8px;
+  }
+
+  .btn--icon-config {
+    width: 24px;
+    height: 24px;
+  }
+
+  .icon-config {
+    width: 12px;
+    height: 12px;
+  }
+
+  .special-block__edit-actions {
+    height: 18px;
+    margin-bottom: 3px;
+  }
+
+  .btn--edit-action {
+    font-size: 8px;
+    gap: 2px;
+  }
+
+  .icon-edit-action {
+    width: 9px;
+    height: 9px;
   }
 
   .btn--special {
@@ -1092,6 +1292,29 @@ button {
 
   .special-block__label {
     font-size: 10px;
+  }
+
+  .btn--icon-config {
+    width: 44px;
+    height: 44px;
+  }
+
+  .icon-config {
+    width: 20px;
+    height: 20px;
+  }
+
+  .special-block__edit-actions {
+    height: clamp(30px, 4vh, 38px);
+  }
+
+  .btn--edit-action {
+    font-size: 13px;
+  }
+
+  .icon-edit-action {
+    width: 15px;
+    height: 15px;
   }
 
   .btn--special {

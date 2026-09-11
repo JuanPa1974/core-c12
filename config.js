@@ -272,6 +272,13 @@
   window.CoreC12Config = {
     STORAGE_KEY: STORAGE_KEY,
     SCHEMA_VERSION: SCHEMA_VERSION,
+    // Límites de rango expuestos de solo lectura — para que la UI de edición
+    // (Fase 2B) pueda componer mensajes de validación (p. ej. "RANGO 1–90")
+    // sin duplicar estos números como regla propia.
+    TAX_RATE_MIN: TAX_RATE_MIN,
+    TAX_RATE_MAX: TAX_RATE_MAX,
+    MARGIN_RATE_MIN: MARGIN_RATE_MIN,
+    MARGIN_RATE_MAX: MARGIN_RATE_MAX,
     getDefaults: getDefaults,
     loadConfig: loadConfig,
     getConfig: getConfig,

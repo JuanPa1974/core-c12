@@ -80,6 +80,30 @@ function extractElementText(html, id) {
   return m ? m[1] : '';
 }
 
+// Discovers every non-<button> element carrying an id="..." (divs, spans used
+// as containers or text targets calc.js addresses directly via
+// getElementById — e.g. the Fase 2B edit-mode labels/containers). Buttons
+// are excluded here since extractButtons() already covers them, with click
+// simulation dispatch that this generic pass doesn't need to duplicate.
+function extractIdElements(html) {
+  const results = [];
+  const tagRe = /<([a-zA-Z0-9]+)\b([^>]*)\bid="([a-zA-Z0-9_-]+)"([^>]*)>/g;
+  let m;
+  while ((m = tagRe.exec(html))) {
+    const tag = m[1].toLowerCase();
+    if (tag === 'button') continue;
+    const attrsRaw = m[2] + ' ' + m[4];
+    const classMatch = attrsRaw.match(/\bclass="([^"]*)"/);
+    results.push({
+      tag,
+      id: m[3],
+      className: classMatch ? classMatch[1] : '',
+      hidden: /(^|\s)hidden(\s|=|$)/.test(attrsRaw),
+    });
+  }
+  return results;
+}
+
 class FakeClassList {
   constructor(el) {
     this._el = el;
@@ -153,11 +177,13 @@ function buildFakeDocument(html) {
   allElements.push(...buttons);
 
   const displayEls = {};
-  for (const id of ['display-number', 'display-status', 'display-detail']) {
-    const el = new FakeElement({ tag: 'div', id, textContent: extractElementText(html, id) });
+  const DISPLAY_IDS = ['display-number', 'display-status', 'display-detail'];
+  for (const { tag, id, className, hidden } of extractIdElements(html)) {
+    const el = new FakeElement({ tag, id, className, textContent: extractElementText(html, id) });
     el.parentElement = appEl;
-    displayEls[id] = el;
+    el.hidden = hidden;
     allElements.push(el);
+    if (DISPLAY_IDS.includes(id)) displayEls[id] = el;
   }
 
   const documentListeners = {};
@@ -236,6 +262,44 @@ function createEngine(options = {}) {
     taxRate(rate) { click(findButton((b) => b.dataset.action === 'tax-rate' && b.dataset.rate === String(rate))); },
     setMarginDirection(direction) { click(findButton((b) => b.dataset.action === 'margin-direction' && b.dataset.direction === direction)); },
     marginRate(rate) { click(findButton((b) => b.dataset.action === 'margin-rate' && b.dataset.rate === String(rate))); },
+
+    // ── Fase 2B: edición configurable de IVA / margen ──
+    editTax()          { click(findButton((b) => b.dataset.action === 'edit-tax')); },
+    editMargin()       { click(findButton((b) => b.dataset.action === 'edit-margin')); },
+    editDoneTax()      { click(findButton((b) => b.dataset.action === 'edit-done-tax')); },
+    editDoneMargin()   { click(findButton((b) => b.dataset.action === 'edit-done-margin')); },
+    resetTaxRates()    { click(findButton((b) => b.dataset.action === 'reset-tax')); },
+    resetMarginRates() { click(findButton((b) => b.dataset.action === 'reset-margin')); },
+
+    // Lectura genérica de cualquier elemento con id (nuevo en Fase 2B:
+    // cabeceras de bloque, fila de acciones, etiqueta de RESTABLECER).
+    elementText(id) {
+      const el = fakeDocument.getElementById(id);
+      if (!el) throw new Error('No element with id="' + id + '" found in real index.html markup');
+      return el.textContent;
+    },
+    elementHidden(id) {
+      const el = fakeDocument.getElementById(id);
+      if (!el) throw new Error('No element with id="' + id + '" found in real index.html markup');
+      return !!el.hidden;
+    },
+    isActionDisabled(action) {
+      const btn = buttons.find((b) => b.dataset.action === action);
+      if (!btn) throw new Error('No button with data-action="' + action + '" found in real index.html markup');
+      return !!btn.disabled;
+    },
+    isRateDisabled(action, rate) {
+      const btn = findButton((b) => b.dataset.action === action && b.dataset.rate === String(rate));
+      return !!btn.disabled;
+    },
+    isRateActive(action, rate) {
+      const btn = findButton((b) => b.dataset.action === action && b.dataset.rate === String(rate));
+      return btn.classList.contains('is-active');
+    },
+    hasClass(action, className) {
+      const btn = findButton((b) => b.dataset.action === action);
+      return btn.classList.contains(className);
+    },
 
     // Lectura de estado de los selectores y rótulos dinámicos, para aserciones de UI
     activeTaxDirection() {

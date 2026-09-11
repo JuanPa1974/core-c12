@@ -80,7 +80,7 @@
         <!-- BLOQUE IVA -->
         <div class="special-block special-block--iva">
           <div class="special-block__header">
-            <span class="special-block__label">IVA</span>
+            <span class="special-block__label" id="tax-block-label">IVA</span>
             <div class="direction-selector" role="group" aria-label="Dirección de IVA">
               <button class="btn--direction btn--tax-direction is-active" data-action="tax-direction"
                 data-direction="add" aria-label="Modo añadir IVA" aria-pressed="true">
@@ -91,6 +91,32 @@
                 &minus;IVA
               </button>
             </div>
+            <button class="btn--icon-config" data-action="edit-tax" aria-label="Configurar IVA">
+              <svg class="icon-config" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                <path d="M3 5h2.5M10.5 5H21"/><circle cx="8" cy="5" r="2.5"/>
+                <path d="M3 12h10.5M18.5 12H21"/><circle cx="16" cy="12" r="2.5"/>
+                <path d="M3 19h2.5M10.5 19H21"/><circle cx="8" cy="19" r="2.5"/>
+              </svg>
+            </button>
+          </div>
+          <div class="special-block__edit-actions" id="tax-edit-actions" hidden>
+            <button class="btn--edit-action btn--edit-reset" data-action="reset-tax"
+              aria-label="Restablecer tasas fiscales">
+              <svg class="icon-edit-action" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                <path d="M4 12a8 8 0 1 0 2.343146-5.656854L4 9"/><path d="M4 4v5h5"/>
+              </svg>
+              <span id="tax-reset-label">RESTABLECER</span>
+            </button>
+            <button class="btn--edit-action btn--edit-done" data-action="edit-done-tax"
+              aria-label="Salir de edición de IVA">
+              <svg class="icon-edit-action" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                <path d="m3 12 6 6L21 6"/>
+              </svg>
+              LISTO
+            </button>
           </div>
           <div class="special-block__grid special-block__grid--rate3">
             <button class="btn btn--special btn--iva" data-action="tax-rate" data-rate="4"
@@ -111,7 +137,7 @@
         <!-- BLOQUE MÁRGENES -->
         <div class="special-block special-block--margin">
           <div class="special-block__header">
-            <span class="special-block__label">MARGEN</span>
+            <span class="special-block__label" id="margin-block-label">MARGEN</span>
             <div class="direction-selector" role="group" aria-label="Dirección de margen">
               <button class="btn--direction btn--margin-direction is-active" data-action="margin-direction"
                 data-direction="forward" aria-label="Modo margen directo: costo a PVP" aria-pressed="true">
@@ -122,6 +148,32 @@
                 &minus;M
               </button>
             </div>
+            <button class="btn--icon-config" data-action="edit-margin" aria-label="Configurar márgenes">
+              <svg class="icon-config" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                <path d="M3 5h2.5M10.5 5H21"/><circle cx="8" cy="5" r="2.5"/>
+                <path d="M3 12h10.5M18.5 12H21"/><circle cx="16" cy="12" r="2.5"/>
+                <path d="M3 19h2.5M10.5 19H21"/><circle cx="8" cy="19" r="2.5"/>
+              </svg>
+            </button>
+          </div>
+          <div class="special-block__edit-actions" id="margin-edit-actions" hidden>
+            <button class="btn--edit-action btn--edit-reset" data-action="reset-margin"
+              aria-label="Restablecer márgenes comerciales">
+              <svg class="icon-edit-action" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                <path d="M4 12a8 8 0 1 0 2.343146-5.656854L4 9"/><path d="M4 4v5h5"/>
+              </svg>
+              <span id="margin-reset-label">RESTABLECER</span>
+            </button>
+            <button class="btn--edit-action btn--edit-done" data-action="edit-done-margin"
+              aria-label="Salir de edición de márgenes">
+              <svg class="icon-edit-action" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                <path d="m3 12 6 6L21 6"/>
+              </svg>
+              LISTO
+            </button>
           </div>
           <div class="special-block__grid">
             <button class="btn btn--special btn--margin" data-action="margin-rate" data-rate="20"
