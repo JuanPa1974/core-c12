@@ -498,7 +498,9 @@
 
     // Marcar botón activo
     document.querySelectorAll('[data-action="set-decimals"]').forEach(btn => {
-      btn.classList.toggle('is-active', parseInt(btn.dataset.decimals, 10) === n);
+      const active = parseInt(btn.dataset.decimals, 10) === n;
+      btn.classList.toggle('is-active', active);
+      btn.setAttribute('aria-pressed', String(active));
     });
 
     // Re-renderizar: si hay resultado activo, el número cambia según el selector
@@ -612,8 +614,9 @@
 
   function renderTaxRateLabels() {
     const sign = state.taxDirection === 'add' ? '+' : '−';
-    document.querySelectorAll('[data-action="tax-rate"]').forEach(btn => {
+    document.querySelectorAll('[data-action="tax-rate"]').forEach((btn, i) => {
       btn.textContent = sign + CoreC12Config.formatRate(btn.dataset.rate);
+      btn.setAttribute('aria-label', rateAriaLabel('tax', i, btn.dataset.rate, false));
     });
   }
 
@@ -627,8 +630,9 @@
 
   function renderMarginRateLabels() {
     const sign = state.marginDirection === 'forward' ? '+' : '−';
-    document.querySelectorAll('[data-action="margin-rate"]').forEach(btn => {
+    document.querySelectorAll('[data-action="margin-rate"]').forEach((btn, i) => {
       btn.textContent = sign + CoreC12Config.formatRate(btn.dataset.rate);
+      btn.setAttribute('aria-label', rateAriaLabel('margin', i, btn.dataset.rate, false));
     });
   }
 
@@ -655,7 +659,8 @@
     state.editMode = null;
     resetEditPositionState();
     renderEditChrome();
-    if (mode === 'tax') renderTaxRateLabels(); else renderMarginRateLabels();
+    if (mode === 'tax') { renderTaxRateLabels(); setActiveTaxEditButton(null); }
+    else { renderMarginRateLabels(); }
     syncActiveMarginButtonFromState();
     updateDisplay();
   }
@@ -827,9 +832,22 @@
   // signo +/− solo aplica a la calculadora, no a la edición de tasas.
   function renderEditRateLabels(mode) {
     const action = mode === 'tax' ? 'tax-rate' : 'margin-rate';
-    document.querySelectorAll('[data-action="' + action + '"]').forEach(btn => {
+    document.querySelectorAll('[data-action="' + action + '"]').forEach((btn, i) => {
       btn.textContent = CoreC12Config.formatRate(btn.dataset.rate);
+      btn.setAttribute('aria-label', rateAriaLabel(mode, i, btn.dataset.rate, true));
     });
+  }
+
+  // Texto accesible de un botón de tasa — normal ("IVA 21 por ciento") o en
+  // edición ("Editar IVA posición 3, valor actual 21 por ciento"). Se
+  // recalcula en el mismo punto que el texto visible para que nunca queden
+  // desincronizados entre sí.
+  function rateAriaLabel(mode, index, rate, editing) {
+    const noun   = mode === 'tax' ? 'IVA' : 'margen';
+    const spoken = CoreC12Config.formatRate(rate).replace('%', ' por ciento');
+    return editing
+      ? 'Editar ' + noun + ' posición ' + (index + 1) + ', valor actual ' + spoken
+      : (mode === 'tax' ? 'IVA ' : 'Margen ') + spoken;
   }
 
   function rateButtonIndex(btn, action) {

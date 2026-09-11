@@ -401,3 +401,59 @@ test('editMode: deshabilita direccion, operadores basicos y el modulo contrario;
 // ── I. Todos los tests legacy (71) deben seguir intactos ─────────────────
 // Verificado por separado en calc-engine.test.js y config.test.js, no
 // duplicado aqui — ver tests/README.md.
+
+// ── J. Fase 2C — accesibilidad y limpieza de estado visual ──────────────
+
+test('aria-label: refleja el valor actual en modo normal, incluso tras editar', () => {
+  const c = createEngine();
+  assert.equal(c.rateAriaLabel('tax-rate', 21), 'IVA 21 por ciento');
+  assert.equal(c.rateAriaLabel('margin-rate', 30), 'Margen 30 por ciento');
+
+  c.editTax(); c.taxRate(21); c.digit(2); c.digit(3); c.equals(); c.editDoneTax();
+  assert.equal(c.rateAriaLabel('tax-rate', 23), 'IVA 23 por ciento');
+});
+
+test('aria-label: cambia a formato de edicion al entrar, con posicion y valor', () => {
+  const c = createEngine();
+  c.editTax();
+  assert.equal(c.rateAriaLabel('tax-rate', 4), 'Editar IVA posición 1, valor actual 4 por ciento');
+  assert.equal(c.rateAriaLabel('tax-rate', 10), 'Editar IVA posición 2, valor actual 10 por ciento');
+  assert.equal(c.rateAriaLabel('tax-rate', 21), 'Editar IVA posición 3, valor actual 21 por ciento');
+});
+
+test('aria-label: se actualiza al valor nuevo inmediatamente tras guardar, sin salir de edicion', () => {
+  const c = createEngine();
+  c.editTax();
+  c.taxRate(21); c.digit(2); c.digit(2); c.equals();
+  assert.equal(c.rateAriaLabel('tax-rate', 22), 'Editar IVA posición 3, valor actual 22 por ciento');
+});
+
+test('aria-label: vuelve al formato normal tras LISTO', () => {
+  const c = createEngine();
+  c.editMargin();
+  assert.equal(c.rateAriaLabel('margin-rate', 20), 'Editar margen posición 1, valor actual 20 por ciento');
+  c.editDoneMargin();
+  assert.equal(c.rateAriaLabel('margin-rate', 20), 'Margen 20 por ciento');
+});
+
+test('aria-pressed: el selector de decimales refleja el decimal activo', () => {
+  const c = createEngine();
+  assert.equal(c.ariaPressed('set-decimals', (b) => b.dataset.decimals === '2'), 'true');
+  assert.equal(c.ariaPressed('set-decimals', (b) => b.dataset.decimals === '4'), 'false');
+
+  c.setDecimals(4);
+  assert.equal(c.ariaPressed('set-decimals', (b) => b.dataset.decimals === '4'), 'true');
+  assert.equal(c.ariaPressed('set-decimals', (b) => b.dataset.decimals === '2'), 'false');
+});
+
+test('regresion: LISTO limpia el resaltado de la posicion IVA editada (no debe sobrevivir a la operacion normal)', () => {
+  const c = createEngine();
+  c.editTax();
+  c.taxRate(21); // selecciona y resalta la posicion 3
+  c.editDoneTax(); // sale sin cambiar nada
+  assert.equal(c.isRateActive('tax-rate', 21), false);
+
+  // Tampoco debe reaparecer tras cambiar de direccion en operacion normal
+  c.setTaxDirection('remove');
+  assert.equal(c.isRateActive('tax-rate', 21), false);
+});

@@ -81,6 +81,13 @@ button {
   touch-action: manipulation;
 }
 
+/* Navegación por teclado: anillo claro y consistente, nunca por color solo.
+   :focus-visible ya evita que aparezca tras un simple toque/clic. */
+button:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.85);
+  outline-offset: 2px;
+}
+
 
 /* ─────────────────────────────────────────────
    CONTENEDOR PRINCIPAL
@@ -225,7 +232,7 @@ button {
   border-radius: 5px;
   background-color: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.25);
+  color: rgba(255, 255, 255, 0.42);
   font-family: var(--font-ui);
   font-size: 11px;
   font-weight: 500;
@@ -237,7 +244,6 @@ button {
   -webkit-tap-highlight-color: transparent;
   user-select: none;
   touch-action: manipulation;
-  outline: none;
 }
 
 .btn--decimal.is-active {
@@ -330,10 +336,14 @@ button {
 }
 
 .special-block--iva {
+  /* IVA sigue siendo el módulo prioritario: algo más de peso vertical
+     que margen, sin dejar de compartir el mismo lenguaje visual. */
+  flex: 1.1;
   border: 1px solid var(--color-iva);
 }
 
 .special-block--margin {
+  flex: 0.9;
   border: 1px solid var(--color-margin);
 }
 
@@ -691,9 +701,11 @@ button {
   background-color: #4A3520;
 }
 
-/* AC: más saturado para indicar destructivo */
+/* AC: más saturado que C, y con borde propio — la diferencia no depende
+   solo del matiz de fondo, más difícil de distinguir de un vistazo rápido. */
 .btn--ac {
   background-color: var(--bg-btn-ac);
+  border: 1px solid rgba(224, 90, 90, 0.35);
 }
 
 .btn--ac:active {

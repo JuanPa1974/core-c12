@@ -300,6 +300,14 @@ function createEngine(options = {}) {
       const btn = findButton((b) => b.dataset.action === action);
       return btn.classList.contains(className);
     },
+    rateAriaLabel(action, rate) {
+      const btn = findButton((b) => b.dataset.action === action && b.dataset.rate === String(rate));
+      return btn.getAttribute('aria-label');
+    },
+    ariaPressed(action, extra) {
+      const btn = findButton((b) => b.dataset.action === action && (!extra || extra(b)));
+      return btn.getAttribute('aria-pressed');
+    },
 
     // Lectura de estado de los selectores y rótulos dinámicos, para aserciones de UI
     activeTaxDirection() {
