@@ -21,7 +21,37 @@ const vm = require('node:vm');
 
 const ROOT = path.resolve(__dirname, '..');
 const INDEX_HTML_PATH = path.join(ROOT, 'index.html');
+const CONFIG_JS_PATH = path.join(ROOT, 'config.js');
 const CALC_JS_PATH = path.join(ROOT, 'calc.js');
+
+/**
+ * Minimal in-memory localStorage, with test-only hooks to simulate a
+ * browser that blocks or throws on storage access (private mode, quota,
+ * disabled storage) — used to verify config.js never lets a storage
+ * failure reach the calculation engine. Passing the SAME instance to two
+ * createEngine() calls simulates a page refresh: fresh JS state, same
+ * persisted storage — exactly like a real browser reload.
+ */
+function createFakeLocalStorage() {
+  const store = new Map();
+  let brokenRead = false;
+  let brokenWrite = false;
+  return {
+    getItem(key) {
+      if (brokenRead) throw new Error('SecurityError: localStorage blocked (simulated)');
+      return store.has(key) ? store.get(key) : null;
+    },
+    setItem(key, value) {
+      if (brokenWrite) throw new Error('QuotaExceededError (simulated)');
+      store.set(key, String(value));
+    },
+    removeItem(key) { store.delete(key); },
+    clear() { store.clear(); },
+    _setBrokenRead(v) { brokenRead = v; },
+    _setBrokenWrite(v) { brokenWrite = v; },
+    _raw(key) { return store.has(key) ? store.get(key) : null; },
+  };
+}
 
 function toCamel(attrName) {
   return attrName.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
@@ -148,22 +178,33 @@ function buildFakeDocument(html) {
 }
 
 /**
- * Loads the real, unmodified calc.js into a fresh vm context wired to a
- * fake document built from the real index.html, fires DOMContentLoaded
+ * Loads the real, unmodified config.js + calc.js into a fresh vm context
+ * wired to a fake document built from the real index.html (same load
+ * order as index.html: config.js before calc.js), fires DOMContentLoaded
  * (as a browser would after parsing the page) to run calc.js's own init(),
  * and returns a small driver that clicks the *actual* buttons found in
  * index.html and reads back the *actual* rendered display text.
+ *
+ * options.localStorage: pass a createFakeLocalStorage() instance to
+ * simulate persistence across a "reload" — create one engine, act on it,
+ * then create a SECOND engine with the same storage instance to see what
+ * the app looks like on next launch. Omit it to get a fresh empty store
+ * (equivalent to a first-ever visit).
  */
-function createEngine() {
-  if (!fs.existsSync(INDEX_HTML_PATH) || !fs.existsSync(CALC_JS_PATH)) {
-    throw new Error('index.html or calc.js not found next to tests/ — expected at project root');
+function createEngine(options = {}) {
+  if (!fs.existsSync(INDEX_HTML_PATH) || !fs.existsSync(CONFIG_JS_PATH) || !fs.existsSync(CALC_JS_PATH)) {
+    throw new Error('index.html, config.js or calc.js not found next to tests/ — expected at project root');
   }
   const html = fs.readFileSync(INDEX_HTML_PATH, 'utf8');
+  const configSrc = fs.readFileSync(CONFIG_JS_PATH, 'utf8');
   const calcSrc = fs.readFileSync(CALC_JS_PATH, 'utf8');
   const { fakeDocument, appEl, buttons, displayEls } = buildFakeDocument(html);
+  const fakeLocalStorage = options.localStorage || createFakeLocalStorage();
 
-  const sandbox = { document: fakeDocument, console };
+  const sandbox = { document: fakeDocument, console, localStorage: fakeLocalStorage };
+  sandbox.window = sandbox; // window === globalThis, as in a real browser
   vm.createContext(sandbox);
+  vm.runInContext(configSrc, sandbox, { filename: 'config.js' });
   vm.runInContext(calcSrc, sandbox, { filename: 'calc.js' });
   fakeDocument._fireDOMContentLoaded();
 
@@ -213,6 +254,18 @@ function createEngine() {
       const btn = buttons.find((b) => b.dataset.action === 'margin-rate' && b.dataset.rate === String(rate));
       return btn ? btn.textContent : null;
     },
+    activeDecimals() {
+      const btn = buttons.find((b) => b.dataset.action === 'set-decimals' && b.classList.contains('is-active'));
+      return btn ? parseInt(btn.dataset.decimals, 10) : null;
+    },
+    // Rate values in real DOM order (left-to-right, top-to-bottom) — the
+    // physical position -> value mapping, exactly as index.html defines it.
+    taxRatesInOrder() {
+      return buttons.filter((b) => b.dataset.action === 'tax-rate').map((b) => Number(b.dataset.rate));
+    },
+    marginRatesInOrder() {
+      return buttons.filter((b) => b.dataset.action === 'margin-rate').map((b) => Number(b.dataset.rate));
+    },
 
     // ── Compatibilidad con los 26 tests legacy (Fase 0) ──
     // La interfaz original tenía 6 botones físicos de IVA (+IVA X / -IVA X) y
@@ -243,7 +296,15 @@ function createEngine() {
       const n = parseFloat(normalized);
       return isNeg ? -n : n;
     },
+
+    // Direct reference to the real window.CoreC12Config object running in
+    // this engine's sandbox — same process, so no serialization needed.
+    // Lets config tests call the real validate*/getDefaults/etc. directly.
+    config: sandbox.CoreC12Config,
+    // The fake localStorage instance backing this engine (same one passed
+    // in via options.localStorage, or the fresh one created for it).
+    localStorage: fakeLocalStorage,
   };
 }
 
-module.exports = { createEngine };
+module.exports = { createEngine, createFakeLocalStorage };

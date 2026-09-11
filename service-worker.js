@@ -1,15 +1,15 @@
-// Bumped -pwa-1 -> -pwa-2: index.html, calc.js y styles.css cambiaron juntos
-// como conjunto (IVA/margen bidireccional, Fase 1). La estrategia
-// cache-first-con-actualizacion-en-segundo-plano serviria una mezcla de
-// app-shell antiguo y nuevo en la primera carga offline si no se invalida
-// el cache previo explicitamente.
-const CACHE_VERSION = 'core-c12-v2-pwa-2';
+// Bumped -pwa-2 -> -pwa-3: nuevo config.js entra en el app shell (Fase 2A,
+// configuracion persistente de tasas/margenes/decimales) e index.html ahora
+// lo referencia antes de calc.js. Sin este bump, una PWA ya instalada podria
+// servir calc.js nuevo con config.js ausente desde el cache previo.
+const CACHE_VERSION = 'core-c12-v2-pwa-3';
 const APP_SHELL_CACHE = CACHE_VERSION + '-app-shell';
 
 const APP_SHELL_ASSETS = [
   '/',
   '/index.html',
   '/styles.css',
+  '/config.js',
   '/calc.js',
   '/manifest.webmanifest',
   '/icons/core-c12-icon.svg',

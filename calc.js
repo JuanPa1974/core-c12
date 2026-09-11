@@ -1,10 +1,11 @@
 /* =============================================================
    CORE C12 — Lógica de calculadora
-   Versión: 2.0 — IVA y margen bidireccionales
+   Versión: 2.1 — configuración persistente (tasas, márgenes, decimales)
    Regla de margen directo (+M):  precio = costo / (1 - margen)
    Regla de margen inverso (−M):  costo  = precio × (1 - margen)
    Regla de IVA directo  (+IVA):  resultado = valor × (1 + tasa)
    Regla de IVA inverso  (−IVA):  resultado = valor / (1 + tasa)
+   Requiere config.js cargado antes (window.CoreC12Config).
    ============================================================= */
 
 (function () {
@@ -55,13 +56,36 @@
 
   function init() {
     document.querySelector('.app').addEventListener('click', handleClick);
+
+    // Configuración persistida: tasas fiscales, márgenes y decimales.
+    // taxDirection/marginDirection NUNCA se leen de aquí — arrancan
+    // siempre en +IVA/+M (ver setTaxDirection/setMarginDirection).
+    CoreC12Config.loadConfig();
+    const config = CoreC12Config.getConfig();
+    applyConfiguredRates(config);
+
     // Renderiza selectores de dirección y rótulos de tasa según el estado inicial
     renderTaxDirectionButtons();
     renderTaxRateLabels();
     renderMarginDirectionButtons();
     renderMarginRateLabels();
-    // Marca el botón de decimales por defecto y renderiza
-    setDecimals(state.decimals);
+    // Decimales: toma el valor configurado y marca el botón activo
+    setDecimals(config.decimals);
+  }
+
+  // Alimenta las posiciones físicas de tasa desde la configuración.
+  // El orden del DOM define la posición; el valor en cada posición es
+  // el configurado (por defecto: 4/10/21 y 20/25/30/35/40/45).
+  function applyConfiguredRates(config) {
+    const taxButtons = document.querySelectorAll('[data-action="tax-rate"]');
+    config.taxRates.forEach((rate, i) => {
+      if (taxButtons[i]) taxButtons[i].dataset.rate = String(rate);
+    });
+
+    const marginButtons = document.querySelectorAll('[data-action="margin-rate"]');
+    config.marginRates.forEach((rate, i) => {
+      if (marginButtons[i]) marginButtons[i].dataset.rate = String(rate);
+    });
   }
 
 
@@ -422,6 +446,7 @@
 
   function setDecimals(n) {
     state.decimals = n;
+    CoreC12Config.updateDecimals(n); // persiste; no-op seguro si localStorage falla
 
     // Marcar botón activo
     document.querySelectorAll('[data-action="set-decimals"]').forEach(btn => {
@@ -538,7 +563,7 @@
   function renderTaxRateLabels() {
     const sign = state.taxDirection === 'add' ? '+' : '−';
     document.querySelectorAll('[data-action="tax-rate"]').forEach(btn => {
-      btn.textContent = sign + btn.dataset.rate + '%';
+      btn.textContent = sign + CoreC12Config.formatRate(btn.dataset.rate);
     });
   }
 
@@ -553,7 +578,7 @@
   function renderMarginRateLabels() {
     const sign = state.marginDirection === 'forward' ? '+' : '−';
     document.querySelectorAll('[data-action="margin-rate"]').forEach(btn => {
-      btn.textContent = sign + btn.dataset.rate + '%';
+      btn.textContent = sign + CoreC12Config.formatRate(btn.dataset.rate);
     });
   }
 
