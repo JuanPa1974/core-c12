@@ -397,3 +397,32 @@ test('caso comercial inverso: 1,00 -> +M30 -> +IVA21 = 1,73 (costo a PVP)', () =
   c.taxRate(21);
   assert.equal(c.display().number, '1,73');
 });
+
+// ── FASE 4 — QA final: escenarios explicitos de la auditoria de release ─
+
+test('QA: 12,50 -> +IVA10 = 13,75 (base decimal, sin ruido de coma flotante visible)', () => {
+  const c = createEngine();
+  c.setTaxDirection('add');
+  c.digit(1); c.digit(2); c.decimalPoint(); c.digit(5); c.digit(0);
+  c.taxRate(10);
+  assert.equal(c.display().number, '13,75');
+});
+
+test('QA: 100 -> +M20 -> +IVA21 = 151,25, y el retorno -IVA21 -> -M20 = 100 (sin perdida por redondeo)', () => {
+  const c = createEngine();
+  c.setMarginDirection('forward');
+  c.setTaxDirection('add');
+  c.digit(1); c.digit(0); c.digit(0);
+  c.marginRate(20);
+  assert.equal(c.display().number, '125,00'); // 100 / 0,80 = 125
+  c.taxRate(21);
+  assert.equal(c.display().number, '151,25'); // 125 * 1,21 = 151,25
+
+  // Recorrido inverso encadenado en vivo desde el resultado (sin re-teclear)
+  c.setTaxDirection('remove');
+  c.taxRate(21);
+  assert.equal(c.display().number, '125,00');
+  c.setMarginDirection('reverse');
+  c.marginRate(20);
+  assert.equal(c.display().number, '100,00');
+});

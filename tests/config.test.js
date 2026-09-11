@@ -195,6 +195,21 @@ test('corrupcion: NaN/Infinity en una tasa -> invalido (probado a nivel de funci
 
 // ── Fase 2A §21: orden personalizado se conserva, sin ordenar ───────────
 
+test('QA Fase 4: taxRates/marginRates no-array (string, objeto, numero, null) -> defaults', () => {
+  const notArrays = ['4,10,21', { 0: 4, 1: 10, 2: 21 }, 42, null];
+  for (const bad of notArrays) {
+    const storageTax = createFakeLocalStorage();
+    storageTax.setItem('core-c12.settings.v1', JSON.stringify({ ...DEFAULTS, taxRates: bad }));
+    assertStartsWithDefaults(storageTax, 'taxRates no-array (' + JSON.stringify(bad) + ')');
+
+    const storageMargin = createFakeLocalStorage();
+    storageMargin.setItem('core-c12.settings.v1', JSON.stringify({ ...DEFAULTS, marginRates: bad }));
+    assertStartsWithDefaults(storageMargin, 'marginRates no-array (' + JSON.stringify(bad) + ')');
+  }
+});
+
+// ── Fase 2A §21: orden personalizado se conserva, sin ordenar ───────────
+
 test('orden personalizado: taxRates y marginRates conservan el orden guardado', () => {
   const storage = createFakeLocalStorage();
   storage.setItem('core-c12.settings.v1', JSON.stringify({
