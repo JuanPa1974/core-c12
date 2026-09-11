@@ -79,62 +79,74 @@
 
         <!-- BLOQUE IVA -->
         <div class="special-block special-block--iva">
-          <span class="special-block__label">IVA</span>
-          <div class="special-block__grid">
-            <button class="btn btn--special btn--iva" data-action="iva-add" data-rate="4"
-              aria-label="Añadir IVA 4 por ciento">
-              +IVA 4%
+          <div class="special-block__header">
+            <span class="special-block__label">IVA</span>
+            <div class="direction-selector" role="group" aria-label="Dirección de IVA">
+              <button class="btn--direction btn--tax-direction is-active" data-action="tax-direction"
+                data-direction="add" aria-label="Modo añadir IVA" aria-pressed="true">
+                +IVA
+              </button>
+              <button class="btn--direction btn--tax-direction" data-action="tax-direction"
+                data-direction="remove" aria-label="Modo quitar IVA" aria-pressed="false">
+                &minus;IVA
+              </button>
+            </div>
+          </div>
+          <div class="special-block__grid special-block__grid--rate3">
+            <button class="btn btn--special btn--iva" data-action="tax-rate" data-rate="4"
+              aria-label="IVA 4 por ciento">
+              +4%
             </button>
-            <button class="btn btn--special btn--iva" data-action="iva-add" data-rate="10"
-              aria-label="Añadir IVA 10 por ciento">
-              +IVA 10%
+            <button class="btn btn--special btn--iva" data-action="tax-rate" data-rate="10"
+              aria-label="IVA 10 por ciento">
+              +10%
             </button>
-            <button class="btn btn--special btn--iva" data-action="iva-add" data-rate="21"
-              aria-label="Añadir IVA 21 por ciento">
-              +IVA 21%
-            </button>
-            <button class="btn btn--special btn--iva" data-action="iva-sub" data-rate="4"
-              aria-label="Descontar IVA 4 por ciento">
-              &minus;IVA 4%
-            </button>
-            <button class="btn btn--special btn--iva" data-action="iva-sub" data-rate="10"
-              aria-label="Descontar IVA 10 por ciento">
-              &minus;IVA 10%
-            </button>
-            <button class="btn btn--special btn--iva" data-action="iva-sub" data-rate="21"
-              aria-label="Descontar IVA 21 por ciento">
-              &minus;IVA 21%
+            <button class="btn btn--special btn--iva" data-action="tax-rate" data-rate="21"
+              aria-label="IVA 21 por ciento">
+              +21%
             </button>
           </div>
         </div>
 
         <!-- BLOQUE MÁRGENES -->
         <div class="special-block special-block--margin">
-          <span class="special-block__label">MARGEN</span>
+          <div class="special-block__header">
+            <span class="special-block__label">MARGEN</span>
+            <div class="direction-selector" role="group" aria-label="Dirección de margen">
+              <button class="btn--direction btn--margin-direction is-active" data-action="margin-direction"
+                data-direction="forward" aria-label="Modo margen directo: costo a PVP" aria-pressed="true">
+                +M
+              </button>
+              <button class="btn--direction btn--margin-direction" data-action="margin-direction"
+                data-direction="reverse" aria-label="Modo margen inverso: PVP a costo" aria-pressed="false">
+                &minus;M
+              </button>
+            </div>
+          </div>
           <div class="special-block__grid">
-            <button class="btn btn--special btn--margin" data-action="margin" data-rate="20"
+            <button class="btn btn--special btn--margin" data-action="margin-rate" data-rate="20"
               aria-label="Margen 20 por ciento">
-              20%
+              +20%
             </button>
-            <button class="btn btn--special btn--margin" data-action="margin" data-rate="25"
+            <button class="btn btn--special btn--margin" data-action="margin-rate" data-rate="25"
               aria-label="Margen 25 por ciento">
-              25%
+              +25%
             </button>
-            <button class="btn btn--special btn--margin" data-action="margin" data-rate="30"
+            <button class="btn btn--special btn--margin" data-action="margin-rate" data-rate="30"
               aria-label="Margen 30 por ciento">
-              30%
+              +30%
             </button>
-            <button class="btn btn--special btn--margin" data-action="margin" data-rate="35"
+            <button class="btn btn--special btn--margin" data-action="margin-rate" data-rate="35"
               aria-label="Margen 35 por ciento">
-              35%
+              +35%
             </button>
-            <button class="btn btn--special btn--margin" data-action="margin" data-rate="40"
+            <button class="btn btn--special btn--margin" data-action="margin-rate" data-rate="40"
               aria-label="Margen 40 por ciento">
-              40%
+              +40%
             </button>
-            <button class="btn btn--special btn--margin" data-action="margin" data-rate="45"
+            <button class="btn btn--special btn--margin" data-action="margin-rate" data-rate="45"
               aria-label="Margen 45 por ciento">
-              45%
+              +45%
             </button>
           </div>
         </div>

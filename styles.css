@@ -327,7 +327,6 @@ button {
   position: relative;
   border-radius: var(--radius-block);
   padding: var(--pad-block);
-  padding-top: calc(var(--pad-block) + 6px);  /* espacio extra para la etiqueta */
 }
 
 .special-block--iva {
@@ -338,19 +337,23 @@ button {
   border: 1px solid var(--color-margin);
 }
 
-/* Etiqueta flotante sobre el borde */
+/* Cabecera del bloque: etiqueta + selector de dirección (+IVA/−IVA, +M/−M) */
+.special-block__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  flex-shrink: 0;
+  margin-bottom: 5px;
+}
+
 .special-block__label {
-  position: absolute;
-  top: -7px;
-  left: 10px;
   font-family: var(--font-ui);
   font-size: clamp(8px, 1.2vh, 10px);
   font-weight: 700;
   letter-spacing: 2px;
   text-transform: uppercase;
   line-height: 1;
-  padding: 0 5px;
-  background-color: var(--bg-app);   /* corta el borde visualmente */
 }
 
 .special-block--iva .special-block__label {
@@ -361,7 +364,64 @@ button {
   color: var(--color-margin);
 }
 
-/* Grid interior del bloque: 3 col × 2 filas */
+/* Selector de dirección: cambia el modo, no calcula */
+.direction-selector {
+  display: flex;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.btn--direction {
+  height: clamp(18px, 2.6vh, 24px);
+  padding: 0 7px;
+  border-radius: 5px;
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  color: rgba(255, 255, 255, 0.45);
+  font-family: var(--font-ui);
+  font-size: clamp(9px, 1.5vh, 11px);
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  touch-action: manipulation;
+  transition: color 100ms ease, background-color 100ms ease, border-color 100ms ease;
+}
+
+.btn--direction:active {
+  background-color: rgba(255, 255, 255, 0.14);
+}
+
+.special-block--iva .btn--tax-direction.is-active {
+  background-color: rgba(245, 197, 24, 0.14);
+  border-color: var(--color-iva);
+  color: var(--color-iva);
+}
+
+.special-block--margin .btn--margin-direction.is-active {
+  background-color: rgba(224, 112, 0, 0.14);
+  border-color: var(--color-margin);
+  color: var(--color-margin);
+}
+
+@media (hover: hover) {
+  .btn--direction:hover {
+    background-color: rgba(255, 255, 255, 0.09);
+    color: rgba(255, 255, 255, 0.7);
+  }
+  .special-block--iva .btn--tax-direction.is-active:hover {
+    background-color: rgba(245, 197, 24, 0.20);
+  }
+  .special-block--margin .btn--margin-direction.is-active:hover {
+    background-color: rgba(224, 112, 0, 0.20);
+  }
+}
+
+/* Grid interior del bloque: 3 col × 2 filas (margen, 6 posiciones) */
 .special-block__grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -370,6 +430,11 @@ button {
   flex: 1;
   min-height: 0;
   min-width: 0;
+}
+
+/* Variante: 3 col × 1 fila (IVA, 3 posiciones físicas) */
+.special-block__grid--rate3 {
+  grid-template-rows: 1fr;
 }
 
 
@@ -736,14 +801,19 @@ button {
     font-size: 9px;
   }
 
-  .special-block {
-    padding-top: calc(var(--pad-block) + 5px);
+  .special-block__header {
+    margin-bottom: 3px;
   }
 
   .special-block__label {
-    top: -6px;
     font-size: 8px;
     letter-spacing: 1.5px;
+  }
+
+  .btn--direction {
+    height: 16px;
+    padding: 0 5px;
+    font-size: 8px;
   }
 
   .btn--special {

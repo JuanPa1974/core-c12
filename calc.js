@@ -1,7 +1,10 @@
 /* =============================================================
    CORE C12 — Lógica de calculadora
-   Versión: 1.1
-   Regla de margen: precio = costo / (1 - margen)
+   Versión: 2.0 — IVA y margen bidireccionales
+   Regla de margen directo (+M):  precio = costo / (1 - margen)
+   Regla de margen inverso (−M):  costo  = precio × (1 - margen)
+   Regla de IVA directo  (+IVA):  resultado = valor × (1 + tasa)
+   Regla de IVA inverso  (−IVA):  resultado = valor / (1 + tasa)
    ============================================================= */
 
 (function () {
@@ -18,8 +21,12 @@
     operator:          null,   // '+' | '-' | '*' | '/'
     waitingForOperand: false,  // true = próximo dígito reemplaza el display
     activeMargin:      null,   // último margen pulsado (número: 20–45)
-    marginStatus:      null,   // texto "MARGEN 30%" o null
+    marginStatus:      null,   // texto "+MARGEN 30%" / "−MARGEN 30%" o null
     ivaStatus:         null,   // texto "+IVA 21%" / "−IVA 21%" o null
+
+    // Modo de dirección — persisten durante la sesión, AC no los toca (Fase 1)
+    taxDirection:      'add',      // 'add' (+IVA, añadir) | 'remove' (−IVA, quitar)
+    marginDirection:   'forward',  // 'forward' (+M, costo→PVP) | 'reverse' (−M, PVP→costo)
 
     // Selector de decimales
     decimals:          2,      // 1 | 2 | 3 | 4 — solo afecta visualización
@@ -48,6 +55,11 @@
 
   function init() {
     document.querySelector('.app').addEventListener('click', handleClick);
+    // Renderiza selectores de dirección y rótulos de tasa según el estado inicial
+    renderTaxDirectionButtons();
+    renderTaxRateLabels();
+    renderMarginDirectionButtons();
+    renderMarginRateLabels();
     // Marca el botón de decimales por defecto y renderiza
     setDecimals(state.decimals);
   }
@@ -65,17 +77,18 @@
     const rateNum = rate !== undefined ? parseFloat(rate) : null;
 
     switch (action) {
-      case 'digit':        inputDigit(value);                          break;
-      case 'decimal':      inputDecimal();                             break;
-      case 'operator':     inputOperator(value);                       break;
-      case 'equals':       calculate();                                break;
-      case 'clear':        clearLast();                                break;
-      case 'all-clear':    clearAll();                                 break;
-      case 'sign':         toggleSign();                               break;
-      case 'percent':      inputPercent();                             break;
-      case 'margin':       applyMargin(rateNum, btn);                  break;
-      case 'iva-add':      applyIva('add', rateNum);                   break;
-      case 'iva-sub':      applyIva('sub', rateNum);                   break;
+      case 'digit':            inputDigit(value);                             break;
+      case 'decimal':          inputDecimal();                                break;
+      case 'operator':         inputOperator(value);                         break;
+      case 'equals':           calculate();                                   break;
+      case 'clear':            clearLast();                                   break;
+      case 'all-clear':        clearAll();                                    break;
+      case 'sign':             toggleSign();                                  break;
+      case 'percent':          inputPercent();                                break;
+      case 'margin-rate':      applyMargin(rateNum, btn);                break;
+      case 'margin-direction': setMarginDirection(btn.dataset.direction); break;
+      case 'tax-rate':         applyTax(rateNum);                        break;
+      case 'tax-direction':    setTaxDirection(btn.dataset.direction);    break;
       // data-decimals, no data-rate
       case 'set-decimals': setDecimals(parseInt(btn.dataset.decimals, 10)); break;
     }
@@ -236,7 +249,8 @@
     state.isResult          = false;
     state.rawResult         = null;
     state.detailText        = '';
-    // state.decimals: NO se resetea
+    // state.decimals, state.taxDirection, state.marginDirection: NO se resetean
+    // (persisten durante la sesión hasta que el usuario los cambie manualmente)
 
     clearActiveMarginButton();
     updateDisplay();
@@ -287,10 +301,15 @@
   }
 
 
-  /* ─────────────────────────────────────────────
-     MARGEN COMERCIAL
-     Fórmula: precio = costo / (1 - margen)
-     ───────────────────────────────────────────── */
+  /* ─────────────────────────────────────────
+     MARGEN COMERCIAL — bidireccional
+     +M (forward): precio = costo / (1 - margen)
+     −M (reverse): costo  = precio × (1 - margen)
+
+     El selector +M/−M (setMarginDirection) SOLO cambia state.marginDirection.
+     No calcula nada y no toca el display. El cálculo ocurre al pulsar
+     una tasa (applyMargin), que lee la dirección activa en ese momento.
+     ───────────────────────────────────────── */
 
   function applyMargin(rate, btn) {
     if (state.displayValue === 'Error') return;
@@ -300,35 +319,54 @@
       ? state.rawResult.toFixed(state.decimals)
       : state.displayValue;
 
-    const value   = parseFloat(state.displayValue);
-    const divisor = 1 - (rate / 100);
-    const result  = value / divisor;
+    const value     = parseFloat(state.displayValue);
+    const direction = state.marginDirection;
+    const result    = direction === 'forward'
+      ? value / (1 - (rate / 100))   // costo → PVP
+      : value * (1 - (rate / 100));  // PVP → costo
+
+    const sign  = direction === 'forward' ? '+' : '\u2212';
+    const label = sign + 'MARGEN ' + rate + '%';
 
     state.rawResult         = result;
     state.isResult          = true;
     state.displayValue      = formatResult(result);
     state.activeMargin      = rate;
-    state.marginStatus      = 'MARGEN ' + rate + '%';
+    state.marginStatus      = label;
     state.ivaStatus         = null;          // margen nuevo limpia IVA anterior
     state.waitingForOperand = true;
-    state.detailText        = inputStr + ' \u2192 margen ' + rate + '%';
+    state.detailText        = inputStr + ' \u2192 ' + sign + 'margen ' + rate + '%';
 
     setActiveMarginButton(btn);
     updateDisplay();
   }
 
+  // Cambia el modo +M/−M. No calcula, no altera el display.
+  function setMarginDirection(direction) {
+    if (direction !== 'forward' && direction !== 'reverse') return;
+    state.marginDirection = direction;
+    renderMarginDirectionButtons();
+    renderMarginRateLabels();
+  }
 
-  /* ─────────────────────────────────────────────
-     IVA
-     Acción directa, no toggle, sin estado persistente.
-     ───────────────────────────────────────────── */
 
-  function applyIva(direction, rate) {
+  /* ─────────────────────────────────────────
+     IVA — bidireccional (motor fiscal porcentual genérico)
+     +IVA (add):    resultado = valor × (1 + tasa)
+     −IVA (remove): resultado = valor ÷ (1 + tasa)
+
+     El selector +IVA/−IVA (setTaxDirection) SOLO cambia state.taxDirection.
+     No calcula nada y no toca el display. El cálculo ocurre al pulsar
+     una tasa (applyTax), que lee la dirección activa en ese momento.
+     ───────────────────────────────────────── */
+
+  function applyTax(rate) {
     if (state.displayValue === 'Error') return;
 
-    const value  = parseFloat(state.displayValue);
-    const factor = rate / 100;
-    const label  = direction === 'add'
+    const value     = parseFloat(state.displayValue);
+    const factor    = rate / 100;
+    const direction = state.taxDirection;
+    const label     = direction === 'add'
       ? '+IVA ' + rate + '%'
       : '\u2212IVA ' + rate + '%';
 
@@ -348,6 +386,14 @@
     state.waitingForOperand = true;
 
     updateDisplay();
+  }
+
+  // Cambia el modo +IVA/−IVA. No calcula, no altera el display.
+  function setTaxDirection(direction) {
+    if (direction !== 'add' && direction !== 'remove') return;
+    state.taxDirection = direction;
+    renderTaxDirectionButtons();
+    renderTaxRateLabels();
   }
 
 
@@ -471,6 +517,43 @@
   function clearActiveMarginButton() {
     document.querySelectorAll('.btn--margin').forEach(btn => {
       btn.classList.remove('is-active');
+    });
+  }
+
+
+  /* ─────────────────────────────────────────────
+     RÓTULOS Y SELECTORES DE DIRECCIÓN (+IVA/−IVA, +M/−M)
+     Solo presentación: reflejan state.taxDirection / state.marginDirection
+     sobre los botones reales. No calculan, no leen ni escriben el display.
+     ───────────────────────────────────────────── */
+
+  function renderTaxDirectionButtons() {
+    document.querySelectorAll('.btn--tax-direction').forEach(btn => {
+      const active = btn.dataset.direction === state.taxDirection;
+      btn.classList.toggle('is-active', active);
+      btn.setAttribute('aria-pressed', String(active));
+    });
+  }
+
+  function renderTaxRateLabels() {
+    const sign = state.taxDirection === 'add' ? '+' : '−';
+    document.querySelectorAll('[data-action="tax-rate"]').forEach(btn => {
+      btn.textContent = sign + btn.dataset.rate + '%';
+    });
+  }
+
+  function renderMarginDirectionButtons() {
+    document.querySelectorAll('.btn--margin-direction').forEach(btn => {
+      const active = btn.dataset.direction === state.marginDirection;
+      btn.classList.toggle('is-active', active);
+      btn.setAttribute('aria-pressed', String(active));
+    });
+  }
+
+  function renderMarginRateLabels() {
+    const sign = state.marginDirection === 'forward' ? '+' : '−';
+    document.querySelectorAll('[data-action="margin-rate"]').forEach(btn => {
+      btn.textContent = sign + btn.dataset.rate + '%';
     });
   }
 

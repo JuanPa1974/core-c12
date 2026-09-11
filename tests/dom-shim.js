@@ -80,9 +80,12 @@ class FakeElement {
     this.textContent = textContent;
     this.parentElement = null;
     this._listeners = {};
+    this._attrs = {};
     this.classList = new FakeClassList(this);
   }
   addEventListener(type, handler) { this._listeners[type] = handler; }
+  setAttribute(name, value) { this._attrs[name] = String(value); }
+  getAttribute(name) { return name in this._attrs ? this._attrs[name] : null; }
   closest(selector) {
     let el = this;
     while (el) {
@@ -185,10 +188,41 @@ function createEngine() {
     allClear() { click(findButton((b) => b.dataset.action === 'all-clear')); },
     sign() { click(findButton((b) => b.dataset.action === 'sign')); },
     percent() { click(findButton((b) => b.dataset.action === 'percent')); },
-    margin(rate) { click(findButton((b) => b.dataset.action === 'margin' && b.dataset.rate === String(rate))); },
-    ivaAdd(rate) { click(findButton((b) => b.dataset.action === 'iva-add' && b.dataset.rate === String(rate))); },
-    ivaSub(rate) { click(findButton((b) => b.dataset.action === 'iva-sub' && b.dataset.rate === String(rate))); },
     setDecimals(n) { click(findButton((b) => b.dataset.action === 'set-decimals' && b.dataset.decimals === String(n))); },
+
+    // ── V2: selector de dirección (solo modo, no calcula) + tasa (calcula) ──
+    setTaxDirection(direction) { click(findButton((b) => b.dataset.action === 'tax-direction' && b.dataset.direction === direction)); },
+    taxRate(rate) { click(findButton((b) => b.dataset.action === 'tax-rate' && b.dataset.rate === String(rate))); },
+    setMarginDirection(direction) { click(findButton((b) => b.dataset.action === 'margin-direction' && b.dataset.direction === direction)); },
+    marginRate(rate) { click(findButton((b) => b.dataset.action === 'margin-rate' && b.dataset.rate === String(rate))); },
+
+    // Lectura de estado de los selectores y rótulos dinámicos, para aserciones de UI
+    activeTaxDirection() {
+      const btn = buttons.find((b) => b.dataset.action === 'tax-direction' && b.classList.contains('is-active'));
+      return btn ? btn.dataset.direction : null;
+    },
+    activeMarginDirection() {
+      const btn = buttons.find((b) => b.dataset.action === 'margin-direction' && b.classList.contains('is-active'));
+      return btn ? btn.dataset.direction : null;
+    },
+    taxRateLabel(rate) {
+      const btn = buttons.find((b) => b.dataset.action === 'tax-rate' && b.dataset.rate === String(rate));
+      return btn ? btn.textContent : null;
+    },
+    marginRateLabel(rate) {
+      const btn = buttons.find((b) => b.dataset.action === 'margin-rate' && b.dataset.rate === String(rate));
+      return btn ? btn.textContent : null;
+    },
+
+    // ── Compatibilidad con los 26 tests legacy (Fase 0) ──
+    // La interfaz original tenía 6 botones físicos de IVA (+IVA X / -IVA X) y
+    // el margen solo tenía dirección directa. La V2 los reemplaza por un
+    // selector de dirección + botones de tasa. Estos wrappers reproducen la
+    // MISMA secuencia de dos clics reales para que las expectativas
+    // matemáticas de los tests legacy sigan sin cambiar (ver Fase 1, sección 14).
+    margin(rate) { this.setMarginDirection('forward'); this.marginRate(rate); },
+    ivaAdd(rate) { this.setTaxDirection('add'); this.taxRate(rate); },
+    ivaSub(rate) { this.setTaxDirection('remove'); this.taxRate(rate); },
 
     display() {
       return {
