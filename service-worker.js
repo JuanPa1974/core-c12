@@ -17,7 +17,15 @@
 // pasa de placeholder al icono maestro aprobado — todos deben quedar en
 // el app shell para instalación/offline correctos. El maskable SVG viejo
 // se retira (sustituido por el PNG maskable aprobado).
-const CACHE_VERSION = 'core-c12-v2-pwa-5';
+//
+// Bumped -pwa-5 -> -pwa-6: refresh visual V2.1 (Dark Premium Calculator).
+// Solo cambia el contenido de styles.css (ya presente en el app shell,
+// sin archivos nuevos) — el bump no es estrictamente necesario para
+// evitar una combinación rota, pero sin él una PWA ya instalada seguiría
+// sirviendo la hoja de estilos V2.0 hasta que "cache first" la actualizara
+// en segundo plano por su cuenta; con el bump, el refresh visual se ve
+// de inmediato en el próximo arranque.
+const CACHE_VERSION = 'core-c12-v2-pwa-6';
 const APP_SHELL_CACHE = CACHE_VERSION + '-app-shell';
 
 const APP_SHELL_ASSETS = [

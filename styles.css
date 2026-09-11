@@ -1,7 +1,10 @@
 /* =============================================================
    CORE C12 — Hoja de estilos principal
-   Versión: 1.0
-   Descripción: Layout completo, sin frameworks, sin lógica JS
+   Versión: 2.1 — Dark Premium Calculator
+   Descripción: Layout completo, sin frameworks, sin lógica JS.
+   V2.1 evoluciona la paleta plana original hacia el lenguaje
+   visual del icono master: carbón azulado con capas diferenciadas,
+   profundidad sutil por gradiente/sombra corta, sin efectos gaming.
    ============================================================= */
 
 
@@ -10,17 +13,24 @@
    ───────────────────────────────────────────── */
 
 :root {
-  /* Fondos */
-  --bg-app:          #1A1A1A;
-  --bg-display:      #0D0D0D;
-  --bg-branding:     #111111;
+  /* Fondos — familia carbón azulada (antes gris/marrón neutro) */
+  --bg-app:          #10151A;
+  --bg-display:      #131A20;
+  --bg-branding:     #12171C;
+  --bg-surface:      #262C31;   /* interior de módulos IVA/MARGEN: separa botón de fondo */
+  --bg-surface-2:    #1B2126;   /* superficie intermedia (fila de acciones de edición, etc.) */
 
-  /* Botones */
-  --bg-btn-digit:    #2A2A2A;
-  --bg-btn-control:  #2E2018;
-  --bg-btn-ac:       #3D1F1F;
-  --bg-btn-special:  #1E1E1E;
-  --bg-btn-equals:   #1A3A5C;
+  /* Botones — degradados sutiles: tono claro (arriba) → tono base (abajo) */
+  --bg-btn-digit:       #2B333B;
+  --bg-btn-digit-hi:    #333C45;
+  --bg-btn-control:     #332821;
+  --bg-btn-control-hi:  #3C2F27;
+  --bg-btn-ac:          #4A262A;
+  --bg-btn-ac-hi:       #572D32;
+  --bg-btn-special:     #232B30;
+  --bg-btn-special-hi:  #2B343A;
+  --bg-btn-equals:      #123B72;
+  --bg-btn-equals-hi:   #17509A;
 
   /* Colores de acento */
   --color-iva:       #F5C518;
@@ -31,17 +41,29 @@
   --color-text-dim:  rgba(255, 255, 255, 0.60);
   --color-sep:       rgba(255, 255, 255, 0.10);
 
-  /* Geometría */
+  /* Bordes y profundidad — líneas finas que separan superficies,
+     nunca luminosas; sombras cortas y oscuras, nunca glow */
+  --border-hairline:    rgba(255, 255, 255, 0.07);
+  --border-hairline-md: rgba(255, 255, 255, 0.13);
+  --shadow-btn:         0 1px 2px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  --shadow-btn-pressed: inset 0 1px 3px rgba(0, 0, 0, 0.5);
+  --shadow-card:        0 2px 6px rgba(0, 0, 0, 0.35);
+
+  /* Geometría — sistema de radios coherente (display/bloques > botones > chips) */
   --gap-btn:         4px;
-  --radius-btn:      6px;
-  --radius-btn-sm:   5px;
-  --radius-block:    8px;
+  --radius-btn:      8px;
+  --radius-btn-sm:   6px;
+  --radius-block:    14px;
+  --radius-display:  16px;
   --pad-block:       8px;
   --pad-workspace:   6px;
 
   /* Tipografía */
   --font-ui:         -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
   --font-display:    'Courier New', 'Lucida Console', monospace;
+
+  /* Microtransiciones — 80–120ms, solo propiedades visuales */
+  --transition-fast: 90ms ease;
 }
 
 
@@ -131,20 +153,22 @@ button:focus-visible {
   flex-shrink: 0;
 }
 
+/* Firma, no protagonista: opacidad reducida y tamaño algo más discreto
+   frente a V2.0 para que nunca compita con el display. */
 .branding__powered {
   display: flex;
   align-items: center;
   justify-content: flex-end;
   min-width: 0;
   flex: 0 1 auto;
-  opacity: 0.96;
+  opacity: 0.80;
 }
 
 .branding__powered img {
   display: block;
   width: auto;
-  height: clamp(24px, 4.2vh, 34px);
-  max-width: clamp(190px, 42vw, 330px);
+  height: clamp(20px, 3.6vh, 28px);
+  max-width: clamp(170px, 38vw, 300px);
   object-fit: contain;
 }
 
@@ -154,18 +178,24 @@ button:focus-visible {
    Altura: 21vh (número + statusbar + detalle)
    ───────────────────────────────────────────── */
 
+/* Superficie propia con borde visible — deja de ser una franja de fondo
+   negro para convertirse en una "pantalla" claramente intencionada.
+   Altura reducida frente a V2.0: menos aire vacío sobre el número. */
 .display {
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
+  justify-content: center;
   align-items: stretch;
   flex-shrink: 0;
-  height: clamp(96px, 23vh, 150px);
-  min-height: 90px;
-  padding: 7px 16px 9px;
+  height: clamp(80px, 18vh, 124px);
+  min-height: 76px;
+  margin: 6px 10px 4px;
+  padding: 0 16px;
   gap: 3px;
   background-color: var(--bg-display);
-  border-bottom: 1px solid var(--color-sep);
+  border: 1px solid var(--border-hairline-md);
+  border-radius: var(--radius-display);
+  box-shadow: var(--shadow-card);
 }
 
 /* Número principal */
@@ -229,17 +259,17 @@ button:focus-visible {
   width: 26px;
   height: 26px;
   padding: 0 5px;
-  border-radius: 5px;
-  background-color: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.42);
+  border-radius: var(--radius-btn-sm);
+  background-color: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-hairline-md);
+  color: rgba(255, 255, 255, 0.45);
   font-family: var(--font-ui);
   font-size: 11px;
   font-weight: 500;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: color 100ms ease, background-color 100ms ease, border-color 100ms ease;
+  transition: color var(--transition-fast), background-color var(--transition-fast), border-color var(--transition-fast);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
@@ -247,13 +277,13 @@ button:focus-visible {
 }
 
 .btn--decimal.is-active {
-  background-color: rgba(255, 255, 255, 0.18);
-  border-color: rgba(255, 255, 255, 0.22);
+  background-color: rgba(255, 255, 255, 0.20);
+  border-color: rgba(255, 255, 255, 0.28);
   color: rgba(255, 255, 255, 1);
 }
 
 .btn--decimal:active {
-  background-color: rgba(255, 255, 255, 0.10);
+  filter: brightness(0.85);
 }
 
 @media (hover: hover) {
@@ -323,7 +353,8 @@ button:focus-visible {
   min-width: 0;
 }
 
-/* Bloque genérico (IVA o Márgenes) */
+/* Bloque genérico (IVA o Márgenes) — superficie propia, un nivel más clara
+   que el fondo de la app: los botones ya no se confunden con el fondo. */
 .special-block {
   flex: 1;
   min-height: 0;
@@ -333,6 +364,8 @@ button:focus-visible {
   position: relative;
   border-radius: var(--radius-block);
   padding: var(--pad-block);
+  background-color: var(--bg-surface);
+  box-shadow: var(--shadow-card);
 }
 
 .special-block--iva {
@@ -384,10 +417,10 @@ button:focus-visible {
 .btn--direction {
   height: clamp(18px, 2.6vh, 24px);
   padding: 0 7px;
-  border-radius: 5px;
-  background-color: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  color: rgba(255, 255, 255, 0.45);
+  border-radius: var(--radius-btn-sm);
+  background-color: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-hairline-md);
+  color: rgba(255, 255, 255, 0.55);
   font-family: var(--font-ui);
   font-size: clamp(9px, 1.5vh, 11px);
   font-weight: 700;
@@ -399,35 +432,35 @@ button:focus-visible {
   -webkit-tap-highlight-color: transparent;
   user-select: none;
   touch-action: manipulation;
-  transition: color 100ms ease, background-color 100ms ease, border-color 100ms ease;
+  transition: color var(--transition-fast), background-color var(--transition-fast), border-color var(--transition-fast);
 }
 
 .btn--direction:active {
-  background-color: rgba(255, 255, 255, 0.14);
+  filter: brightness(0.9);
 }
 
+/* Estado activo: relleno sólido del color del módulo (no solo un tinte),
+   con texto oscuro — el contraste no depende de un matiz sutil. */
 .special-block--iva .btn--tax-direction.is-active {
-  background-color: rgba(245, 197, 24, 0.14);
+  background-color: var(--color-iva);
   border-color: var(--color-iva);
-  color: var(--color-iva);
+  color: #1A1400;
 }
 
 .special-block--margin .btn--margin-direction.is-active {
-  background-color: rgba(224, 112, 0, 0.14);
+  background-color: var(--color-margin);
   border-color: var(--color-margin);
-  color: var(--color-margin);
+  color: #1F0D00;
 }
 
 @media (hover: hover) {
   .btn--direction:hover {
-    background-color: rgba(255, 255, 255, 0.09);
-    color: rgba(255, 255, 255, 0.7);
+    background-color: rgba(255, 255, 255, 0.11);
+    color: rgba(255, 255, 255, 0.85);
   }
-  .special-block--iva .btn--tax-direction.is-active:hover {
-    background-color: rgba(245, 197, 24, 0.20);
-  }
+  .special-block--iva .btn--tax-direction.is-active:hover,
   .special-block--margin .btn--margin-direction.is-active:hover {
-    background-color: rgba(224, 112, 0, 0.20);
+    filter: brightness(1.08);
   }
 }
 
@@ -438,20 +471,25 @@ button:focus-visible {
    durante editMode del módulo correspondiente.
    ───────────────────────────────────────────── */
 
-/* Icono de entrada a edición — discreto, circular, currentColor real
-   (SVG inline heredado del sistema de iconos aprobado) */
+/* Icono de entrada a edición — contenedor de botón completo (cuadrado
+   redondeado, fondo y borde propios, profundidad moderada), no un icono
+   suelto. El símbolo SVG en sí no cambia (currentColor real, heredado del
+   sistema de iconos aprobado); el marco pertenece al componente de UI. */
 .btn--icon-config {
   flex-shrink: 0;
   width: 40px;
   height: 40px;
   margin-left: 2px;
-  border-radius: 50%;
+  border-radius: var(--radius-btn-sm);
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: transparent;
-  color: rgba(255, 255, 255, 0.42);
-  transition: color 100ms ease, background-color 100ms ease, transform 80ms ease;
+  background-color: var(--bg-surface-2);
+  background-image: linear-gradient(180deg, var(--bg-btn-special-hi), var(--bg-surface-2));
+  border: 1px solid var(--border-hairline-md);
+  box-shadow: var(--shadow-btn);
+  color: rgba(255, 255, 255, 0.62);
+  transition: color var(--transition-fast), background-color var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .icon-config {
@@ -461,9 +499,10 @@ button:focus-visible {
 }
 
 .btn--icon-config:active {
-  background-color: rgba(255, 255, 255, 0.12);
-  color: rgba(255, 255, 255, 0.9);
-  transform: scale(0.92);
+  color: rgba(255, 255, 255, 0.95);
+  transform: translateY(1px);
+  box-shadow: var(--shadow-btn-pressed);
+  filter: brightness(0.9);
 }
 
 .btn--icon-config:disabled {
@@ -473,8 +512,8 @@ button:focus-visible {
 
 @media (hover: hover) {
   .btn--icon-config:hover {
-    background-color: rgba(255, 255, 255, 0.08);
-    color: rgba(255, 255, 255, 0.75);
+    color: rgba(255, 255, 255, 0.85);
+    filter: brightness(1.12);
   }
 }
 
@@ -508,10 +547,11 @@ button:focus-visible {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  background-color: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  color: rgba(255, 255, 255, 0.55);
-  transition: color 100ms ease, background-color 100ms ease, border-color 100ms ease;
+  background-color: var(--bg-surface-2);
+  border: 1px solid var(--border-hairline-md);
+  color: rgba(255, 255, 255, 0.65);
+  box-shadow: var(--shadow-btn);
+  transition: color var(--transition-fast), background-color var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .icon-edit-action {
@@ -540,7 +580,8 @@ button:focus-visible {
 }
 
 .btn--edit-action:active {
-  transform: scale(0.96);
+  transform: translateY(1px);
+  box-shadow: var(--shadow-btn-pressed);
 }
 
 .btn--edit-action:disabled {
@@ -641,18 +682,25 @@ button:focus-visible {
   line-height: 1;
   color: var(--color-text);
   background-color: var(--bg-btn-digit);
+  background-image: linear-gradient(180deg, var(--bg-btn-digit-hi), var(--bg-btn-digit));
+  border: 1px solid var(--border-hairline);
+  box-shadow: var(--shadow-btn);
   transition:
-    background-color 60ms ease,
-    transform       60ms ease,
-    box-shadow      60ms ease;
+    background-color var(--transition-fast),
+    border-color     var(--transition-fast),
+    transform        var(--transition-fast),
+    box-shadow       var(--transition-fast);
   position: relative;
   overflow: hidden;
 }
 
-/* Efecto táctil rápido (sin delay perceptible) */
+/* Efecto táctil: el botón "se hunde" — pierde elevación en vez de encogerse.
+   filter: brightness es universal, así cada variante de color oscurece de
+   forma consistente sin necesitar un tono de :active hecho a mano. */
 .btn:active {
-  background-color: #444444;
-  transform: scale(0.95);
+  transform: translateY(1px);
+  box-shadow: var(--shadow-btn-pressed);
+  filter: brightness(0.87);
 }
 
 /* Deshabilitado durante editMode (Fase 2B): el atributo disabled real ya
@@ -674,56 +722,45 @@ button:focus-visible {
 /* Dígitos: 0–9 y punto decimal */
 .btn--digit {
   background-color: var(--bg-btn-digit);
+  background-image: linear-gradient(180deg, var(--bg-btn-digit-hi), var(--bg-btn-digit));
   font-size: clamp(16px, 3vh, 23px);
   font-weight: 650;
 }
 
-/* Operadores: ÷ × − + */
+/* Operadores: ÷ × − + — mismo tono que dígitos, se diferencian por tipografía */
 .btn--operator {
   background-color: var(--bg-btn-digit);
+  background-image: linear-gradient(180deg, var(--bg-btn-digit-hi), var(--bg-btn-digit));
   font-size: clamp(19px, 3.5vh, 27px);
   font-weight: 600;
-}
-
-.btn--operator:active {
-  background-color: #444444;
 }
 
 /* Control: C, AC, +/−, % */
 .btn--control {
   background-color: var(--bg-btn-control);
+  background-image: linear-gradient(180deg, var(--bg-btn-control-hi), var(--bg-btn-control));
   font-size: clamp(12px, 2.2vh, 17px);
   font-weight: 650;
   letter-spacing: 0.3px;
-}
-
-.btn--control:active {
-  background-color: #4A3520;
 }
 
 /* AC: más saturado que C, y con borde propio — la diferencia no depende
    solo del matiz de fondo, más difícil de distinguir de un vistazo rápido. */
 .btn--ac {
   background-color: var(--bg-btn-ac);
+  background-image: linear-gradient(180deg, var(--bg-btn-ac-hi), var(--bg-btn-ac));
   border: 1px solid rgba(224, 90, 90, 0.35);
 }
 
-.btn--ac:active {
-  background-color: #5A2A2A;
-}
-
-/* Botón = : dominante, color diferenciado */
+/* Botón = : dominante, color diferenciado, acento azul del icono master */
 .btn--equals {
   background-color: var(--bg-btn-equals);
+  background-image: linear-gradient(180deg, var(--bg-btn-equals-hi), var(--bg-btn-equals));
   font-size: clamp(21px, 4vh, 32px);
   font-weight: 700;
   letter-spacing: 1.5px;
   border-radius: var(--radius-btn);
-}
-
-.btn--equals:active {
-  background-color: #102840;
-  transform: scale(0.97);
+  border-color: rgba(120, 180, 240, 0.25);
 }
 
 
@@ -731,19 +768,16 @@ button:focus-visible {
    TIPOS DE BOTÓN — Funciones especiales
    ───────────────────────────────────────────── */
 
-/* Base común para IVA y Márgenes */
+/* Base común para IVA y Márgenes — superficie claramente distinta del
+   fondo del módulo, con la misma profundidad que el resto de botones */
 .btn--special {
   background-color: var(--bg-btn-special);
+  background-image: linear-gradient(180deg, var(--bg-btn-special-hi), var(--bg-btn-special));
   font-size: clamp(11px, 1.9vh, 15px);
   font-weight: 600;
   border-radius: var(--radius-btn-sm);
   line-height: 1.1;
   text-align: center;
-}
-
-.btn--special:active {
-  background-color: #2E2E2E;
-  transform: scale(0.95);
 }
 
 /* Botones IVA */
@@ -770,24 +804,12 @@ button:focus-visible {
 
 @media (hover: hover) {
   .btn--digit:hover,
-  .btn--operator:hover {
-    background-color: #363636;
-  }
-
-  .btn--control:hover {
-    background-color: #3E2D1E;
-  }
-
-  .btn--ac:hover {
-    background-color: #4A2828;
-  }
-
-  .btn--equals:hover {
-    background-color: #1F4570;
-  }
-
+  .btn--operator:hover,
+  .btn--control:hover,
+  .btn--ac:hover,
+  .btn--equals:hover,
   .btn--special:hover {
-    background-color: #282828;
+    filter: brightness(1.12);
   }
 
   .btn--margin.is-active:hover {
@@ -805,7 +827,7 @@ button:focus-visible {
   position: fixed;
   inset: 0;
   z-index: 999;
-  background-color: #0D0D0D;
+  background-color: var(--bg-display);
   flex-direction: column;
   align-items: center;
   justify-content: center;
@@ -1112,8 +1134,23 @@ button:focus-visible {
   .display {
     height: clamp(116px, 18dvh, 145px);
     min-height: 112px;
+    position: relative;
     padding: 8px 14px 9px;
     gap: 3px;
+  }
+
+  /* El selector de decimales "flotaba" lejos del borde inferior porque
+     la línea de detalle (traza de operación), aunque vacía, sigue
+     reservando su alto en el flujo flex. Se desacopla con position:
+     absolute y se ancla directamente a la esquina inferior derecha del
+     display — mismo margen que ya define el padding, ni pegado al
+     borde ni a la deriva — sin que la traza (cuando sí tiene texto)
+     lo desplace nunca. */
+  .display__decimals {
+    position: absolute;
+    right: 14px;
+    bottom: 9px;
+    margin-left: 0;
   }
 
   .display__number {
@@ -1155,6 +1192,8 @@ button:focus-visible {
     max-width: 100%;
   }
 
+  /* Altura base compartida por iPad portrait (los breakpoints móviles
+     más específicos, abajo, fijan un valor exacto igual para ambas). */
   .special-block {
     flex: 0 0 auto;
     min-height: 88px;
@@ -1202,6 +1241,23 @@ button:focus-visible {
     grid-template-columns: repeat(3, calc((100vw - (var(--pad-workspace) * 2) - (var(--pad-block) * 2) - (var(--gap-btn) * 2) - 2px) / 3));
   }
 
+  /* IVA y MARGEN: misma altura exterior exacta. Ninguno de los dos se
+     redimensiona por contenido — ambos comparten el mismo valor fijo. */
+  .special-block--iva,
+  .special-block--margin {
+    height: 140px;
+  }
+
+  /* Botones individuales del mismo tamaño: la fila única de IVA usa la
+     misma pista de 1fr que cada una de las 2 filas de MARGEN (mismo
+     grid-template-rows), así ambas resuelven a idéntica altura de fila
+     por construcción — la segunda fila de IVA queda vacía en vez de
+     estirar sus botones para llenarla. No se comprime MARGEN ni se
+     reduce IVA: el espacio se reorganiza dentro de cada caja. */
+  .special-block__grid--rate3 {
+    grid-template-rows: repeat(2, 1fr);
+  }
+
   .col-right {
     grid-template-columns: repeat(4, calc((100vw - (var(--pad-workspace) * 2) - (var(--gap-btn) * 3)) / 4));
   }
@@ -1238,10 +1294,6 @@ button:focus-visible {
   .display__detail {
     font-size: 10px;
     min-height: 12px;
-  }
-
-  .special-block {
-    min-height: 78px;
   }
 
   .btn--special {
@@ -1415,6 +1467,6 @@ button:focus-visible {
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: #0A0A0A;
+    background-color: #080B0E;
   }
 }
