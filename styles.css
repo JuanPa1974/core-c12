@@ -1134,8 +1134,23 @@ button:focus-visible {
   .display {
     height: clamp(116px, 18dvh, 145px);
     min-height: 112px;
+    position: relative;
     padding: 8px 14px 9px;
     gap: 3px;
+  }
+
+  /* El selector de decimales "flotaba" lejos del borde inferior porque
+     la línea de detalle (traza de operación), aunque vacía, sigue
+     reservando su alto en el flujo flex. Se desacopla con position:
+     absolute y se ancla directamente a la esquina inferior derecha del
+     display — mismo margen que ya define el padding, ni pegado al
+     borde ni a la deriva — sin que la traza (cuando sí tiene texto)
+     lo desplace nunca. */
+  .display__decimals {
+    position: absolute;
+    right: 14px;
+    bottom: 9px;
+    margin-left: 0;
   }
 
   .display__number {
@@ -1177,18 +1192,11 @@ button:focus-visible {
     max-width: 100%;
   }
 
-  /* MARGEN necesita más altura que IVA: son 6 botones en 2 filas frente
-     a 3 en 1 fila — con la misma min-height quedaban demasiado finos. */
+  /* Altura base compartida por iPad portrait (los breakpoints móviles
+     más específicos, abajo, fijan un valor exacto igual para ambas). */
   .special-block {
     flex: 0 0 auto;
-  }
-
-  .special-block--iva {
-    min-height: 96px;
-  }
-
-  .special-block--margin {
-    min-height: 164px;
+    min-height: 88px;
   }
 
   .special-block__label {
@@ -1233,6 +1241,23 @@ button:focus-visible {
     grid-template-columns: repeat(3, calc((100vw - (var(--pad-workspace) * 2) - (var(--pad-block) * 2) - (var(--gap-btn) * 2) - 2px) / 3));
   }
 
+  /* IVA y MARGEN: misma altura exterior exacta. Ninguno de los dos se
+     redimensiona por contenido — ambos comparten el mismo valor fijo. */
+  .special-block--iva,
+  .special-block--margin {
+    height: 140px;
+  }
+
+  /* Botones individuales del mismo tamaño: la fila única de IVA usa la
+     misma pista de 1fr que cada una de las 2 filas de MARGEN (mismo
+     grid-template-rows), así ambas resuelven a idéntica altura de fila
+     por construcción — la segunda fila de IVA queda vacía en vez de
+     estirar sus botones para llenarla. No se comprime MARGEN ni se
+     reduce IVA: el espacio se reorganiza dentro de cada caja. */
+  .special-block__grid--rate3 {
+    grid-template-rows: repeat(2, 1fr);
+  }
+
   .col-right {
     grid-template-columns: repeat(4, calc((100vw - (var(--pad-workspace) * 2) - (var(--gap-btn) * 3)) / 4));
   }
@@ -1269,14 +1294,6 @@ button:focus-visible {
   .display__detail {
     font-size: 10px;
     min-height: 12px;
-  }
-
-  .special-block--iva {
-    min-height: 86px;
-  }
-
-  .special-block--margin {
-    min-height: 144px;
   }
 
   .btn--special {
