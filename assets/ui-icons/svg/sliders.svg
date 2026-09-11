@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <g id="slider-top">
+    <path d="M3 5h2.5M10.5 5H21"/>
+    <circle cx="8" cy="5" r="2.5"/>
+  </g>
+  <g id="slider-middle">
+    <path d="M3 12h10.5M18.5 12H21"/>
+    <circle cx="16" cy="12" r="2.5"/>
+  </g>
+  <g id="slider-bottom">
+    <path d="M3 19h2.5M10.5 19H21"/>
+    <circle cx="8" cy="19" r="2.5"/>
+  </g>
+</svg>
