@@ -1263,8 +1263,14 @@ button:focus-visible {
   }
 }
 
-/* Móvil portrait bajo: mantiene todo accesible con desplazamiento mínimo */
-@media (max-width: 767px) and (orientation: portrait) and (max-height: 720px) {
+/* Móvil portrait compacto: por debajo de ~1000px de alto lógico, la
+   suma de branding + display + IVA/Margen + teclado (nivel "roomy" de
+   arriba) supera la altura real disponible en pantalla — no solo en
+   iPhone pequeños (SE), sino en la inmensa mayoría de iPhone actuales
+   (p.ej. iPhone 17 Pro, ~874px de alto lógico). Este nivel compacto
+   sin scroll ya estaba correctamente calibrado; solo le faltaba cubrir
+   ese rango real de dispositivos (antes limitado a max-height: 720px). */
+@media (max-width: 767px) and (orientation: portrait) and (max-height: 1000px) {
   :root {
     --gap-btn:       4px;
     --pad-block:     6px;
@@ -1301,7 +1307,11 @@ button:focus-visible {
   }
 
   .col-right {
-    flex-basis: 340px;
+    /* Margen de seguridad real (no al límite del píxel) frente al
+       cálculo teórico de altura disponible en el rango de dispositivos
+       que cubre este nivel — evita que un redondeo de subpíxel vuelva
+       a recortar la fila de "=". */
+    flex-basis: 325px;
   }
 
   .btn--digit    { font-size: 20px; }
