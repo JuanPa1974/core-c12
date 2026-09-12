@@ -8,6 +8,12 @@
   },
   "packageManager": "npm@11.19.0",
   "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
     "test": "node --test"
+  },
+  "devDependencies": {
+    "vite": "^8.3.0"
   }
 }
