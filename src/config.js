@@ -3,10 +3,13 @@
    Versión de esquema: 1
    Clave de almacenamiento: core-c12.settings.v1
 
-   Responsabilidad única: defaults, validación, y lectura/escritura
-   segura de localStorage. Sin dependencia del DOM. calc.js consume
-   esta capa a través de window.CoreC12Config; nunca lee ni escribe
-   localStorage directamente.
+   Responsabilidad única: defaults, validación, y orquestación de
+   carga/guardado. Sin dependencia del DOM. El acceso concreto al
+   almacenamiento persistente vive exclusivamente en
+   storage/preferences.js (globalThis.CoreC12Preferences) — este
+   archivo nunca toca ese almacenamiento directamente, solo le pide
+   leer/escribir mediante una clave. calc.js consume esta capa a
+   través de window.CoreC12Config.
 
    Persistencia todo-o-nada: si cualquier campo almacenado es
    inválido (JSON corrupto, versión desconocida, o cualquier valor
@@ -15,11 +18,13 @@
    híbrido sería impredecible y más difícil de depurar que perder
    una configuración corrupta por completo.
 
-   localStorage puede no estar disponible, o lanzar excepción al
-   leer o escribir (modo privado, cuota excedida, política del
-   navegador). Ninguna función de este archivo propaga esa
-   excepción: la persistencia es una mejora, nunca un punto único
-   de fallo. Si falla, Core C12 sigue funcionando en memoria.
+   El almacenamiento subyacente puede no estar disponible, o lanzar
+   excepción al leer o escribir (modo privado, cuota excedida,
+   política del navegador) — storage/preferences.js ya absorbe eso
+   de forma segura. Ninguna función de este archivo propaga una
+   excepción por ese motivo: la persistencia es una mejora, nunca un
+   punto único de fallo. Si falla, Core C12 sigue funcionando en
+   memoria.
    ============================================================= */
 
 (function () {
@@ -46,43 +51,9 @@
   var ALLOWED_DECIMALS  = [1, 2, 3, 4];
 
   // Configuración válida vigente en memoria — fuente de verdad en runtime.
-  // Se mantiene sincronizada con localStorage cuando esa escritura es posible.
+  // Se mantiene sincronizada con el almacenamiento persistente cuando esa
+  // escritura es posible.
   var currentConfig = null;
-
-
-  /* ─────────────────────────────────────────────
-     ACCESO SEGURO A localStorage
-     ───────────────────────────────────────────── */
-
-  function getStorage() {
-    try {
-      if (typeof localStorage === 'undefined' || localStorage === null) return null;
-      return localStorage;
-    } catch (e) {
-      return null; // acceder a la propiedad ya puede lanzar en algunos navegadores
-    }
-  }
-
-  function safeRead(key) {
-    var storage = getStorage();
-    if (!storage) return null;
-    try {
-      return storage.getItem(key);
-    } catch (e) {
-      return null;
-    }
-  }
-
-  function safeWrite(key, value) {
-    var storage = getStorage();
-    if (!storage) return false;
-    try {
-      storage.setItem(key, value);
-      return true;
-    } catch (e) {
-      return false;
-    }
-  }
 
 
   /* ─────────────────────────────────────────────
@@ -180,7 +151,7 @@
   // (sin escribirlos todavía — no reescribe una configuración corrupta
   // preexistente por su cuenta; write-back solo ocurre vía update*/save).
   function loadConfig() {
-    var raw = safeRead(STORAGE_KEY);
+    var raw = CoreC12Preferences.read(STORAGE_KEY);
 
     if (raw !== null) {
       var parsed = null;
@@ -214,15 +185,15 @@
   }
 
   // Valida y persiste un objeto de configuración completo. Si es válido,
-  // actualiza SIEMPRE la copia en memoria — incluso si la escritura en
-  // localStorage falla, porque la persistencia nunca debe bloquear el uso
-  // normal de la app (ver cabecera). Devuelve si la config es válida y
-  // quedó aplicada en memoria (no si además se guardó en disco).
+  // actualiza SIEMPRE la copia en memoria — incluso si la escritura en el
+  // almacenamiento persistente falla, porque la persistencia nunca debe
+  // bloquear el uso normal de la app (ver cabecera). Devuelve si la config
+  // es válida y quedó aplicada en memoria (no si además se guardó en disco).
   function saveConfig(config) {
     var result = validateConfig(config);
     if (!result.valid) return false;
     currentConfig = result.config;
-    safeWrite(STORAGE_KEY, JSON.stringify(currentConfig));
+    CoreC12Preferences.write(STORAGE_KEY, JSON.stringify(currentConfig));
     return true;
   }
 

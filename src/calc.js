@@ -275,7 +275,7 @@
   function setDecimals(n) {
     if (editState.editMode !== null) return;
     calcState.setDecimals(n);
-    CoreC12Config.updateDecimals(n); // persiste; no-op seguro si localStorage falla
+    CoreC12Config.updateDecimals(n); // persiste; no-op seguro si el almacenamiento falla
 
     // Marcar botón activo
     document.querySelectorAll('[data-action="set-decimals"]').forEach(btn => {
