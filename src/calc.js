@@ -5,7 +5,8 @@
    Regla de margen inverso (−M):  costo  = precio × (1 - margen)
    Regla de IVA directo  (+IVA):  resultado = valor × (1 + tasa)
    Regla de IVA inverso  (−IVA):  resultado = valor / (1 + tasa)
-   Requiere config.js cargado antes (window.CoreC12Config).
+   Requiere cargados antes: core/calculator.js (globalThis.CoreC12Core)
+   y config.js (window.CoreC12Config).
    ============================================================= */
 
 (function () {
@@ -215,9 +216,9 @@
 
     // Encadenamiento: calcular resultado intermedio antes de seguir
     if (state.operator !== null && !state.waitingForOperand) {
-      const result = compute(state.previousValue, current, state.operator);
+      const result = CoreC12Core.compute(state.previousValue, current, state.operator);
       if (result === null) { handleError(); return; }
-      state.displayValue  = formatResult(result);
+      state.displayValue  = CoreC12Core.formatResult(result);
       state.previousValue = result;
       traceFirst          = state.displayValue;   // resultado intermedio
     } else {
@@ -249,7 +250,7 @@
     const current = parseFloat(state.displayValue);
     const op      = state.operator;
     const prev    = state.previousValue;
-    const result  = compute(prev, current, op);
+    const result  = CoreC12Core.compute(prev, current, op);
 
     if (result === null) { handleError(); return; }
 
@@ -259,7 +260,7 @@
 
     state.rawResult         = result;
     state.isResult          = true;
-    state.displayValue      = formatResult(result);
+    state.displayValue      = CoreC12Core.formatResult(result);
     state.previousValue     = null;
     state.operator          = null;
     state.waitingForOperand = true;
@@ -267,16 +268,7 @@
     updateDisplay();
   }
 
-  // Aritmética pura — devuelve null si división por cero
-  function compute(a, b, op) {
-    switch (op) {
-      case '+': return a + b;
-      case '-': return a - b;
-      case '*': return a * b;
-      case '/': return b === 0 ? null : a / b;
-      default:  return b;
-    }
-  }
+  // Aritmética pura — extraída a core/calculator.js (CoreC12Core.compute)
 
 
   /* ─────────────────────────────────────────────
@@ -334,7 +326,7 @@
 
     if (state.isResult && state.rawResult !== null) {
       state.rawResult    = -state.rawResult;
-      state.displayValue = formatResult(state.rawResult);
+      state.displayValue = CoreC12Core.formatResult(state.rawResult);
     } else {
       state.displayValue = state.displayValue.startsWith('-')
         ? state.displayValue.slice(1)
@@ -353,17 +345,17 @@
 
     if (hasPendingOp) {
       // % relativo: 200 + 10% → 10% de 200 = 20
-      result = (state.previousValue * num) / 100;
+      result = CoreC12Core.percentOfBase(state.previousValue, num);
       const prevStr = String(parseFloat(state.previousValue.toPrecision(8)));
       state.detailText = prevStr + ' ' + opSymbol(state.operator) + ' ' + state.displayValue + '%';
     } else {
-      result = num / 100;
+      result = CoreC12Core.percentAsDecimal(num);
       state.detailText = state.displayValue + '%';
     }
 
     state.rawResult         = result;
     state.isResult          = true;
-    state.displayValue      = formatResult(result);
+    state.displayValue      = CoreC12Core.formatResult(result);
     state.waitingForOperand = true;
 
     updateDisplay();
@@ -390,16 +382,14 @@
 
     const value     = parseFloat(state.displayValue);
     const direction = state.marginDirection;
-    const result    = direction === 'forward'
-      ? value / (1 - (rate / 100))   // costo → PVP
-      : value * (1 - (rate / 100));  // PVP → costo
+    const result    = CoreC12Core.applyMarginRate(value, rate, direction);
 
     const sign  = direction === 'forward' ? '+' : '\u2212';
     const label = sign + 'MARGEN ' + rate + '%';
 
     state.rawResult         = result;
     state.isResult          = true;
-    state.displayValue      = formatResult(result);
+    state.displayValue      = CoreC12Core.formatResult(result);
     state.activeMargin      = rate;
     state.marginStatus      = label;
     state.ivaStatus         = null;          // margen nuevo limpia IVA anterior
@@ -434,15 +424,12 @@
     if (state.displayValue === 'Error') return;
 
     const value     = parseFloat(state.displayValue);
-    const factor    = rate / 100;
     const direction = state.taxDirection;
     const label     = direction === 'add'
       ? '+IVA ' + rate + '%'
       : '\u2212IVA ' + rate + '%';
 
-    const result = direction === 'add'
-      ? value * (1 + factor)
-      : value / (1 + factor);
+    const result = CoreC12Core.applyTaxRate(value, rate, direction);
 
     // Encadenar al trace existente si lo hay
     state.detailText = state.detailText
@@ -451,7 +438,7 @@
 
     state.rawResult         = result;
     state.isResult          = true;
-    state.displayValue      = formatResult(result);
+    state.displayValue      = CoreC12Core.formatResult(result);
     state.ivaStatus         = label;
     state.waitingForOperand = true;
 
@@ -512,11 +499,8 @@
      UTILIDADES
      ───────────────────────────────────────────── */
 
-  // Elimina ruido de coma flotante y trailing zeros (uso interno)
-  function formatResult(num) {
-    if (!isFinite(num)) return 'Error';
-    return String(parseFloat(num.toPrecision(10)));
-  }
+  // Elimina ruido de coma flotante y trailing zeros — extraído a
+  // core/calculator.js (CoreC12Core.formatResult)
 
   // Formato visual español/europeo. No altera el valor interno ni la entrada.
   function formatDisplayNumber(rawValue) {
