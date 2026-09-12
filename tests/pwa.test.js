@@ -3,12 +3,12 @@
 /*
  * Structural checks for the PWA identity introduced in Fase 3: manifest
  * JSON shape, that every referenced icon file actually exists on disk (no
- * 404s), and that index.html/service-worker.js stay coherent with it.
+ * 404s), and that index.html/vite.config.mjs stay coherent with it.
  *
  * These are file/JSON-structure assertions, not browser behavior — cheap,
  * deterministic, and immune to the usual "fragile browser metadata test"
  * trap. They don't replace the manual manifest/service-worker validation
- * in a real browser (see the Fase 3 report), only guard the parts that
+ * in a real browser (see the Etapa 3 report), only guard the parts that
  * are easy to regress silently (a renamed icon file, a typo'd path, an
  * apple-touch-icon pointing at a format iOS doesn't actually support).
  */
@@ -21,7 +21,7 @@ const path = require('node:path');
 const ROOT = path.resolve(__dirname, '..');
 const manifestRaw = fs.readFileSync(path.join(ROOT, 'public', 'manifest.webmanifest'), 'utf8');
 const indexHtml = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
-const swSource = fs.readFileSync(path.join(ROOT, 'service-worker.js'), 'utf8');
+const viteConfigSource = fs.readFileSync(path.join(ROOT, 'vite.config.mjs'), 'utf8');
 
 test('manifest: es JSON valido con los campos de identidad esperados', () => {
   const manifest = JSON.parse(manifestRaw);
@@ -73,12 +73,24 @@ test('index.html: favicon y titulo presentes y coherentes con la identidad Core 
   assert.match(indexHtml, /<meta name="apple-mobile-web-app-title" content="Core C12">/);
 });
 
-test('service-worker: el app shell incluye todos los iconos que el manifest referencia', () => {
+test('vite.config: Workbox (generateSW) precachea el app shell completo sin duplicar el manifest existente', () => {
+  assert.match(viteConfigSource, /strategies:\s*['"]generateSW['"]/);
+  assert.match(viteConfigSource, /manifest:\s*false/);
+
   const manifest = JSON.parse(manifestRaw);
+  const globMatch = viteConfigSource.match(/globPatterns:\s*\[\s*['"]([^'"]+)['"]/);
+  assert.ok(globMatch, 'no se encontro globPatterns en vite.config.mjs');
+  const patternExts = globMatch[1].match(/\{([^}]+)\}/);
+  assert.ok(patternExts, 'globPatterns no tiene una lista de extensiones {a,b,c}');
+  const cachedExts = new Set(patternExts[1].split(','));
+
+  // Cada extensión de icono declarada en el manifest debe estar cubierta.
   for (const icon of manifest.icons) {
-    assert.ok(
-      swSource.includes(`'${icon.src}'`),
-      `service-worker.js no cachea el icono del manifest: ${icon.src}`
-    );
+    const ext = icon.src.split('.').pop();
+    assert.ok(cachedExts.has(ext), `Workbox no precachea la extension de icono del manifest: .${ext}`);
+  }
+  // El propio manifest y el app shell (html/js/css) deben estar cubiertos.
+  for (const ext of ['webmanifest', 'html', 'js', 'css']) {
+    assert.ok(cachedExts.has(ext), `Workbox no precachea .${ext}, requerido por el app shell`);
   }
 });
