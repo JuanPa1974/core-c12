@@ -22,6 +22,7 @@ const vm = require('node:vm');
 const ROOT = path.resolve(__dirname, '..');
 const INDEX_HTML_PATH = path.join(ROOT, 'index.html');
 const CORE_JS_PATH = path.join(ROOT, 'src', 'core', 'calculator.js');
+const STATE_JS_PATH = path.join(ROOT, 'src', 'state', 'calculator-state.js');
 const CONFIG_JS_PATH = path.join(ROOT, 'src', 'config.js');
 const CALC_JS_PATH = path.join(ROOT, 'src', 'calc.js');
 
@@ -222,13 +223,15 @@ function createEngine(options = {}) {
   if (
     !fs.existsSync(INDEX_HTML_PATH) ||
     !fs.existsSync(CORE_JS_PATH) ||
+    !fs.existsSync(STATE_JS_PATH) ||
     !fs.existsSync(CONFIG_JS_PATH) ||
     !fs.existsSync(CALC_JS_PATH)
   ) {
-    throw new Error('index.html not found at project root, or core/calculator.js, config.js, calc.js not found in src/');
+    throw new Error('index.html not found at project root, or core/calculator.js, state/calculator-state.js, config.js, calc.js not found in src/');
   }
   const html = fs.readFileSync(INDEX_HTML_PATH, 'utf8');
   const coreSrc = fs.readFileSync(CORE_JS_PATH, 'utf8');
+  const stateSrc = fs.readFileSync(STATE_JS_PATH, 'utf8');
   const configSrc = fs.readFileSync(CONFIG_JS_PATH, 'utf8');
   const calcSrc = fs.readFileSync(CALC_JS_PATH, 'utf8');
   const { fakeDocument, appEl, buttons, displayEls } = buildFakeDocument(html);
@@ -237,9 +240,11 @@ function createEngine(options = {}) {
   const sandbox = { document: fakeDocument, console, localStorage: fakeLocalStorage };
   sandbox.window = sandbox; // window === globalThis, as in a real browser
   vm.createContext(sandbox);
-  // Mismo orden de carga que index.html: core (CoreC12Core) antes que
-  // config (CoreC12Config), antes que calc.js, que depende de ambos.
+  // Mismo orden de carga que index.html: core (CoreC12Core) y state
+  // (CoreC12State) antes que config (CoreC12Config), antes que calc.js,
+  // que depende de los tres.
   vm.runInContext(coreSrc, sandbox, { filename: 'core/calculator.js' });
+  vm.runInContext(stateSrc, sandbox, { filename: 'state/calculator-state.js' });
   vm.runInContext(configSrc, sandbox, { filename: 'config.js' });
   vm.runInContext(calcSrc, sandbox, { filename: 'calc.js' });
   fakeDocument._fireDOMContentLoaded();
