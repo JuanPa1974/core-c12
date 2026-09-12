@@ -14,11 +14,13 @@
     "test": "node --test"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.5.2",
     "vite": "^8.3.0",
     "vite-plugin-pwa": "^1.3.0"
   },
   "dependencies": {
     "@capacitor/core": "^8.5.2",
-    "@capacitor/haptics": "^8.0.2"
+    "@capacitor/haptics": "^8.0.2",
+    "@capacitor/ios": "^8.5.2"
   }
 }
