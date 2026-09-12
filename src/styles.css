@@ -1417,6 +1417,13 @@ button:focus-visible {
     --pad-workspace: 8px;
   }
 
+  /* Safe area superior: en iPad la barra de estado permanece arriba en
+     landscape (a diferencia del iPhone, donde el notch/Dynamic Island se
+     desplaza al lateral y este inset resuelve a 0px sin efecto alguno). */
+  .app {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
   .branding {
     padding: 0 20px;
   }
@@ -1469,9 +1476,13 @@ button:focus-visible {
 /* ─────────────────────────────────────────────
    RESPONSIVE — Escritorio grande (> 1200px)
    Centra y limita el ancho para no distorsionar
+   Restringido a puntero fino + hover real (ratón de escritorio):
+   un iPad landscape puede superar 1200px de ancho lógico pero su
+   input primario sigue siendo touch (coarse/sin hover) aunque tenga
+   trackpad conectado, así que nunca activa este modo tarjeta.
    ───────────────────────────────────────────── */
 
-@media (min-width: 1200px) {
+@media (min-width: 1200px) and (hover: hover) and (pointer: fine) {
   .app {
     max-width: 1280px;
     max-height: 800px;
