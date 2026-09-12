@@ -219,6 +219,14 @@ function buildFakeDocument(html) {
  * then create a SECOND engine with the same storage instance to see what
  * the app looks like on next launch. Omit it to get a fresh empty store
  * (equivalent to a first-ever visit).
+ *
+ * options.haptics: pass a plain { light, medium, error } spy object to
+ * observe calc.js's internal haptics classification (Etapa 6) without
+ * exporting it as public API. src/platform/haptics.js itself is never
+ * loaded here (it has real npm imports, unparseable as a classic vm
+ * script) — omit this option to test calc.js exactly as the other 161
+ * tests do, with CoreC12Haptics left undefined (a real no-op, same as
+ * calc.js's own guard produces when the platform layer isn't loaded).
  */
 function createEngine(options = {}) {
   if (
@@ -242,6 +250,7 @@ function createEngine(options = {}) {
 
   const sandbox = { document: fakeDocument, console, localStorage: fakeLocalStorage };
   sandbox.window = sandbox; // window === globalThis, as in a real browser
+  if (options.haptics) sandbox.CoreC12Haptics = options.haptics;
   vm.createContext(sandbox);
   // Mismo orden de carga que index.html: core (CoreC12Core), state
   // (CoreC12State) y storage (CoreC12Preferences) antes que config

@@ -112,6 +112,8 @@
     const { action, value, rate } = btn.dataset;
     const rateNum = rate !== undefined ? parseFloat(rate) : null;
 
+    requestHapticsForAction(action, editState.editMode);
+
     switch (action) {
       case 'digit':            inputDigit(value);                             break;
       case 'decimal':          inputDecimal();                                break;
@@ -144,6 +146,43 @@
       case 'reset-tax':        handleResetRates('tax');    break;
       case 'reset-margin':     handleResetRates('margin'); break;
     }
+  }
+
+
+  /* ─────────────────────────────────────────────
+     HÁPTICA (PLATFORM) — Etapa 6
+     Punto único de integración: se clasifica y solicita aquí, nunca
+     disperso dentro de cada acción. Política V1 conservadora,
+     pendiente de calibración física (ver informe de la Etapa 6):
+       LIGHT  — dígitos, decimal, signo, porcentaje, C
+       MEDIUM — operadores, =, aplicar IVA/Margen, cambio de
+                dirección IVA/Margen, AC
+     tax-rate/margin-rate son la excepción: el mismo data-action
+     significa "aplicar" (calculadora, MEDIUM) o "seleccionar posición
+     a editar" (Fase 2B) según editMode — solo el primer caso es una
+     acción comercial real, así que solo ese dispara háptica.
+     Sin evento de error ya caracterizado en la UI actual, no se
+     invoca CoreC12Haptics.error() desde ningún punto todavía.
+     Si CoreC12Haptics no está cargado (p. ej. en los tests, que no
+     importan paquetes npm de Capacitor), la solicitud es un no-op.
+     ───────────────────────────────────────────── */
+
+  const HAPTICS_LIGHT_ACTIONS = new Set(['digit', 'decimal', 'sign', 'percent', 'clear']);
+  const HAPTICS_MEDIUM_ACTIONS = new Set(['operator', 'equals', 'all-clear', 'margin-direction', 'tax-direction']);
+
+  function requestHaptics(intensity) {
+    if (typeof CoreC12Haptics === 'undefined') return;
+    const fn = CoreC12Haptics[intensity];
+    if (typeof fn === 'function') fn();
+  }
+
+  function requestHapticsForAction(action, editMode) {
+    if (editMode === null && (action === 'margin-rate' || action === 'tax-rate')) {
+      requestHaptics('medium');
+      return;
+    }
+    if (HAPTICS_LIGHT_ACTIONS.has(action))  { requestHaptics('light');  return; }
+    if (HAPTICS_MEDIUM_ACTIONS.has(action)) { requestHaptics('medium'); return; }
   }
 
 
