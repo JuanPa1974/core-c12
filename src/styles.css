@@ -1427,11 +1427,19 @@ button:focus-visible {
   }
 }
 
-/* Mobile landscape ancho: separa el header de bordes/notch sin alterar la UI */
+/* Mobile landscape ancho: reserva el safe area físico en el contenedor raíz
+   (mismo patrón que el breakpoint <768px) para que branding, display y
+   teclado queden protegidos por igual; branding conserva solo el respiro
+   visual adicional (28px), sin duplicar el inset físico. */
 @media (min-width: 768px) and (max-height: 500px) and (orientation: landscape) {
+  .app {
+    padding-left:  env(safe-area-inset-left,  0px);
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+
   .branding {
-    padding-left: calc(env(safe-area-inset-left, 0px) + 28px);
-    padding-right: calc(env(safe-area-inset-right, 0px) + 28px);
+    padding-left: 28px;
+    padding-right: 28px;
   }
 }
 
