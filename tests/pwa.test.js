@@ -19,7 +19,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const ROOT = path.resolve(__dirname, '..');
-const manifestRaw = fs.readFileSync(path.join(ROOT, 'manifest.webmanifest'), 'utf8');
+const manifestRaw = fs.readFileSync(path.join(ROOT, 'public', 'manifest.webmanifest'), 'utf8');
 const indexHtml = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
 const swSource = fs.readFileSync(path.join(ROOT, 'service-worker.js'), 'utf8');
 
@@ -53,7 +53,7 @@ test('manifest: expone exactamente los 3 iconos PNG requeridos (192 any, 512 any
 test('manifest: todos los iconos referenciados existen realmente en disco (sin 404)', () => {
   const manifest = JSON.parse(manifestRaw);
   for (const icon of manifest.icons) {
-    const filePath = path.join(ROOT, icon.src.replace(/^\//, ''));
+    const filePath = path.join(ROOT, 'public', icon.src.replace(/^\//, ''));
     assert.ok(fs.existsSync(filePath), `icono referenciado pero ausente: ${icon.src}`);
   }
 });
@@ -63,12 +63,12 @@ test('index.html: apple-touch-icon apunta a un PNG, nunca a un SVG (iOS no sopor
   assert.ok(match, 'no se encontro <link rel="apple-touch-icon"> en index.html');
   assert.match(match[1], /\.png$/i);
 
-  const filePath = path.join(ROOT, match[1]);
+  const filePath = path.join(ROOT, 'public', match[1].replace(/^\//, ''));
   assert.ok(fs.existsSync(filePath), `apple-touch-icon referenciado pero ausente: ${match[1]}`);
 });
 
 test('index.html: favicon y titulo presentes y coherentes con la identidad Core C12', () => {
-  assert.match(indexHtml, /<link\s+rel="icon"[^>]*href="icons\/core-c12-icon\.svg"/);
+  assert.match(indexHtml, /<link\s+rel="icon"[^>]*href="\/icons\/core-c12-icon\.svg"/);
   assert.match(indexHtml, /<title>Core C12<\/title>/);
   assert.match(indexHtml, /<meta name="apple-mobile-web-app-title" content="Core C12">/);
 });

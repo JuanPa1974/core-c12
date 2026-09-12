@@ -11,11 +11,11 @@
   <meta name="application-name" content="Core C12">
   <meta name="theme-color" content="#111111">
   <title>Core C12</title>
-  <link rel="manifest" href="manifest.webmanifest">
-  <link rel="icon" href="icons/core-c12-icon.svg" type="image/svg+xml">
-  <link rel="icon" href="icons/core-c12-icon-192.png" type="image/png" sizes="192x192">
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/icons/core-c12-icon.svg" type="image/svg+xml">
+  <link rel="icon" href="/icons/core-c12-icon-192.png" type="image/png" sizes="192x192">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="/src/styles.css">
 </head>
 
 <body>
@@ -40,7 +40,7 @@
       <span class="branding__name">CORE C12</span>
       <span class="branding__powered">
         <img
-          src="assets/branding/andaralab-poweredby-horizontal.png"
+          src="/assets/branding/andaralab-poweredby-horizontal.png"
           width="1800"
           height="320"
           alt="Powered by AndaraLab"
@@ -267,15 +267,9 @@
   </div>
   <!-- /app -->
 
-  <script type="module" src="config.js"></script>
-  <script type="module" src="calc.js"></script>
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/service-worker.js');
-      });
-    }
-  </script>
+  <script type="module" src="/src/config.js"></script>
+  <script type="module" src="/src/calc.js"></script>
+  <!-- PWA registration pending — Etapa 3 (Vite PWA + Workbox) -->
 </body>
 
 </html>

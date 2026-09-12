@@ -21,8 +21,8 @@ const vm = require('node:vm');
 
 const ROOT = path.resolve(__dirname, '..');
 const INDEX_HTML_PATH = path.join(ROOT, 'index.html');
-const CONFIG_JS_PATH = path.join(ROOT, 'config.js');
-const CALC_JS_PATH = path.join(ROOT, 'calc.js');
+const CONFIG_JS_PATH = path.join(ROOT, 'src', 'config.js');
+const CALC_JS_PATH = path.join(ROOT, 'src', 'calc.js');
 
 /**
  * Minimal in-memory localStorage, with test-only hooks to simulate a
@@ -219,7 +219,7 @@ function buildFakeDocument(html) {
  */
 function createEngine(options = {}) {
   if (!fs.existsSync(INDEX_HTML_PATH) || !fs.existsSync(CONFIG_JS_PATH) || !fs.existsSync(CALC_JS_PATH)) {
-    throw new Error('index.html, config.js or calc.js not found next to tests/ — expected at project root');
+    throw new Error('index.html not found at project root, or config.js/calc.js not found in src/');
   }
   const html = fs.readFileSync(INDEX_HTML_PATH, 'utf8');
   const configSrc = fs.readFileSync(CONFIG_JS_PATH, 'utf8');
