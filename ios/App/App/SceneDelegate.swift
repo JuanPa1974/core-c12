@@ -8,7 +8,12 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         guard let windowScene = scene as? UIWindowScene else { return }
 
         window = UIWindow(windowScene: windowScene)
-        window?.rootViewController = CAPBridgeViewController()
+        // SPIKE (feature/core-c12-pro-iap): CoreC12BridgeViewController
+        // registra CoreC12PurchasesPlugin manualmente porque Capacitor no
+        // auto-descubre plugins nativos definidos en el target de la app
+        // (ver CoreC12BridgeViewController.swift). Fuera de esta rama, en
+        // main, sigue siendo CAPBridgeViewController() sin modificar.
+        window?.rootViewController = CoreC12BridgeViewController()
         window?.makeKeyAndVisible()
 
         SceneDelegateProxy.shared.scene(scene, willConnectTo: session, options: connectionOptions)

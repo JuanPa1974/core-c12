@@ -12,12 +12,17 @@ import StoreKitTest
 // diseñará en src/platform/purchases.js + src/state/entitlement-state.js
 // solo si este spike confirma que StoreKit 2 on-device es suficiente.
 //
-// En Debug, activa una SKTestSession apuntando a Configuration.storekit
-// para poder ejercitar todo el flujo (compra, restore, reembolso
-// simulado) sin Apple Developer Program ni App Store Connect, tanto
-// desde Xcode como desde `xcrun simctl launch` (SKTestSession no
-// depende de que el esquema de Xcode tenga seleccionado un StoreKit
-// Configuration file — se activa por código).
+// IMPORTANTE (hallazgo confirmado con crash real, no una suposición):
+// SKTestSession(configurationFileNamed:) provoca un SIGABRT si se llama
+// fuera de un proceso anfitrión de XCTest — su inicializador depende
+// internamente de __getXCTestConfigurationClass, y NO es un error Swift
+// capturable con do/catch (el abort ocurre a nivel Objective-C, por
+// debajo del manejo de errores de Swift). Por eso NO se crea aquí en
+// load(): hacerlo bloquearía CUALQUIER arranque normal de la app
+// (`xcrun simctl launch`, o incluso Xcode Run sin un target de test).
+// simulateRefund() la crea de forma perezosa solo si se invoca
+// explícitamente — ver su propio comentario para el alcance exacto de
+// esta limitación.
 @objc(CoreC12PurchasesPlugin)
 public class CoreC12PurchasesPlugin: CAPPlugin, CAPBridgedPlugin {
     public let identifier = "CoreC12PurchasesPlugin"
@@ -33,21 +38,9 @@ public class CoreC12PurchasesPlugin: CAPPlugin, CAPBridgedPlugin {
     private let proProductID = "com.andaralab.corec12.pro"
     private var lastTransactionID: UInt64?
 
-    #if DEBUG
-    private var testSession: SKTestSession?
-    #endif
-
-    @objc override public func load() {
-        #if DEBUG
-        do {
-            let session = try SKTestSession(configurationFileNamed: "Configuration")
-            session.disableDialogs = false
-            self.testSession = session
-        } catch {
-            print("CoreC12Purchases SPIKE: no se pudo iniciar SKTestSession — \(error)")
-        }
-        #endif
-    }
+    // load() deliberadamente no hace nada — ver el comentario de
+    // cabecera sobre por qué SKTestSession no puede crearse aquí sin
+    // abortar el proceso.
 
     @objc func getProduct(_ call: CAPPluginCall) {
         Task {
@@ -165,8 +158,17 @@ public class CoreC12PurchasesPlugin: CAPPlugin, CAPBridgedPlugin {
     // StoreKit 2 lo refleja automáticamente en Transaction.currentEntitlements.
     @objc func simulateRefund(_ call: CAPPluginCall) {
         #if DEBUG
-        guard let session = self.testSession else {
-            call.reject("Sesión de StoreKit Testing no disponible", "NO_TEST_SESSION")
+        // Guarda obligatoria: SKTestSession aborta el proceso (SIGABRT,
+        // no capturable) si no hay un anfitrión XCTest activo. Esta
+        // variable de entorno es la señal estándar y segura de que sí
+        // lo hay — comprobarla ANTES de instanciar la sesión es la única
+        // forma de evitar el crash en un lanzamiento normal (Xcode Run
+        // sin target de test, o `xcrun simctl launch`).
+        guard ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil else {
+            call.reject(
+                "simulateRefund requiere ejecutar la app desde un target XCTest (SKTestSession aborta el proceso fuera de ese contexto). No disponible desde un lanzamiento normal.",
+                "NO_XCTEST_HOST"
+            )
             return
         }
         guard let transactionId = self.lastTransactionID else {
@@ -174,7 +176,8 @@ public class CoreC12PurchasesPlugin: CAPPlugin, CAPBridgedPlugin {
             return
         }
         do {
-            try session.refundTransaction(identifier: Int(transactionId))
+            let session = try SKTestSession(configurationFileNamed: "Configuration")
+            try session.refundTransaction(identifier: UInt(transactionId))
             call.resolve(["status": "refunded"])
         } catch {
             call.reject("Error simulando reembolso: \(error.localizedDescription)", "REFUND_ERROR")

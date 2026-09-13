@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		229E6B5E4070617B3DB67B4D /* StoreKitTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 803847E98A07645F998E762F /* StoreKitTest.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
+		FEA073FD7D0246EBD4C4F589 /* CoreC12BridgeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6150350F4B946C7D776610B /* CoreC12BridgeViewController.swift */; };
 		122456DAA183463065EF4298 /* CoreC12PurchasesPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F07022305A44B82B70E50AF /* CoreC12PurchasesPlugin.swift */; };
 		343F4977D8A56CA32E6BF0C7 /* Configuration.storekit in Resources */ = {isa = PBXBuildFile; fileRef = A5DA1592C633A43BD0A5A365 /* Configuration.storekit */; };
 		2FAD9763203C412B000D30F8 /* config.xml in Resources */ = {isa = PBXBuildFile; fileRef = 2FAD9762203C412B000D30F8 /* config.xml */; };
@@ -21,6 +23,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		803847E98A07645F998E762F /* StoreKitTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKitTest.framework; path = System/Library/Frameworks/StoreKitTest.framework; sourceTree = SDKROOT; };
+		E6150350F4B946C7D776610B /* CoreC12BridgeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreC12BridgeViewController.swift; sourceTree = "<group>"; };
 		3F07022305A44B82B70E50AF /* CoreC12PurchasesPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreC12PurchasesPlugin.swift; sourceTree = "<group>"; };
 		A5DA1592C633A43BD0A5A365 /* Configuration.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = Configuration.storekit; sourceTree = "<group>"; };
 		2FAD9762203C412B000D30F8 /* config.xml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = config.xml; sourceTree = "<group>"; };
@@ -42,6 +46,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				4D22ABE92AF431CB00220026 /* CapApp-SPM in Frameworks */,
+				229E6B5E4070617B3DB67B4D /* StoreKitTest.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -54,6 +59,7 @@
 				958DCC722DB07C7200EA8C5F /* debug.xcconfig */,
 				504EC3061FED79650016851F /* App */,
 				504EC3051FED79650016851F /* Products */,
+				803847E98A07645F998E762F /* StoreKitTest.framework */,
 			);
 			sourceTree = "<group>";
 		};
@@ -69,6 +75,7 @@
 			isa = PBXGroup;
 			children = (
 				9582B6822FE993A50072D4E8 /* SceneDelegate.swift */,
+				E6150350F4B946C7D776610B /* CoreC12BridgeViewController.swift */,
 				3F07022305A44B82B70E50AF /* CoreC12PurchasesPlugin.swift */,
 				A5DA1592C633A43BD0A5A365 /* Configuration.storekit */,
 				50379B222058CBB4000EE86E /* capacitor.config.json */,
@@ -167,6 +174,7 @@
 			files = (
 				504EC3081FED79650016851F /* AppDelegate.swift in Sources */,
 				9582B6832FE993A70072D4E8 /* SceneDelegate.swift in Sources */,
+				FEA073FD7D0246EBD4C4F589 /* CoreC12BridgeViewController.swift in Sources */,
 				122456DAA183463065EF4298 /* CoreC12PurchasesPlugin.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

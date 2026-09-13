@@ -44,5 +44,27 @@
     bind('iap-spike-restore', api.restorePurchases);
     bind('iap-spike-refund', api.simulateRefund);
     setStatus('listo');
+
+    // Auto-chequeo SOLO diagnóstico: getProduct() y getEntitlement() no
+    // requieren ninguna hoja de compra ni interacción del usuario, así
+    // que se registran en consola (visible vía `simctl launch --console`)
+    // para verificar el puente JS -> nativo -> StoreKit 2 sin necesidad
+    // de pulsar nada. NO reemplaza la prueba manual de compra/cancelación.
+    setTimeout(async () => {
+      const lines = [];
+      try {
+        const product = await api.getProduct();
+        lines.push('getProduct OK: ' + JSON.stringify(product));
+      } catch (e) {
+        lines.push('getProduct ERROR: ' + (e && e.message ? e.message : String(e)));
+      }
+      try {
+        const entitlement = await api.getEntitlement();
+        lines.push('getEntitlement OK: ' + JSON.stringify(entitlement));
+      } catch (e) {
+        lines.push('getEntitlement ERROR: ' + (e && e.message ? e.message : String(e)));
+      }
+      setStatus('[AUTOCHECK]\n' + lines.join('\n'));
+    }, 1500);
   });
 })();
