@@ -1414,6 +1414,60 @@ button:focus-visible {
   .btn--equals   { font-size: 34px; }
 }
 
+/* iPad grande portrait (iPad Pro/Air 13", ancho lógico ~1032px): sobre el
+   bloque anterior, que ya reparte bien el espacio en tablets de ~744–834px
+   de ancho. En pantallas más altas, .col-right (flex:1 0 540px) absorbe en
+   solitario TODO el sobrante vertical, y como .special-block__grid reparte
+   ese alto en filas 1fr, los botones del teclado terminan
+   desproporcionadamente altos. En vez de recortar el teclado y dejar hueco
+   muerto (mismo error que se corrigió en iPad mini), el sobrante se
+   redistribuye: display e IVA/Margen crecen algo más (más presencia,
+   proporciones más cuidadas) y los gaps se abren un poco (aire entre
+   botones), de modo que el teclado sigue llenando el espacio pero con
+   filas más comedidas. Umbral en 1000px: separa con margen holgado los
+   iPad de 13" (~1032px) de los de 11"/mini (≤834px), que no deben cambiar. */
+@media (min-width: 1000px) and (orientation: portrait) {
+  :root {
+    --gap-btn:       15px;
+    --pad-workspace: 18px;
+  }
+
+  .display {
+    height: clamp(170px, 16dvh, 240px);
+    padding: 16px 28px 17px;
+  }
+
+  .display__number {
+    font-size: clamp(64px, 7.4dvh, 98px);
+  }
+
+  .workspace {
+    gap: 18px;
+    padding: 18px;
+  }
+
+  .col-left {
+    gap: 18px;
+  }
+
+  .special-block {
+    min-height: 235px;
+  }
+
+  .special-block__label {
+    font-size: 12px;
+  }
+
+  .btn--special {
+    font-size: 17px;
+  }
+
+  .btn--digit    { font-size: 24px; }
+  .btn--operator { font-size: 28px; }
+  .btn--control  { font-size: 17px; }
+  .btn--equals   { font-size: 31px; }
+}
+
 
 /* ─────────────────────────────────────────────
    RESPONSIVE — iPad landscape (768px–1180px)
