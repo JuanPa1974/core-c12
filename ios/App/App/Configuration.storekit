@@ -1,0 +1,32 @@
+{
+  "identifier" : "8BCC5819",
+  "nonRenewingSubscriptions" : [],
+  "products" : [
+    {
+      "displayPrice" : "4.99",
+      "familyShareable" : false,
+      "internalID" : "68224153",
+      "localizations" : [
+        {
+          "description" : "Desbloquea todas las funciones comerciales avanzadas de Core C12: IVA e inversos completos, todos los márgenes y futuras herramientas Pro.",
+          "displayName" : "Core C12 Pro",
+          "locale" : "es_ES"
+        },
+        {
+          "description" : "Unlock all advanced commercial features in Core C12: full VAT rates and inverses, all margins, and future Pro tools.",
+          "displayName" : "Core C12 Pro",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.andaralab.corec12.pro",
+      "referenceName" : "Core C12 Pro",
+      "type" : "NonConsumable"
+    }
+  ],
+  "settings" : {},
+  "subscriptionGroups" : [],
+  "version" : {
+    "major" : 2,
+    "minor" : 0
+  }
+}
