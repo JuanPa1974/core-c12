@@ -1,5 +1,12 @@
 {
   "appId": "com.andaralab.corec12",
   "appName": "Core C12",
-  "webDir": "dist"
+  "webDir": "dist",
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 600,
+      "launchAutoHide": true,
+      "backgroundColor": "#10151A"
+    }
+  }
 }
