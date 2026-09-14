@@ -45,6 +45,53 @@
 
 
   /* ─────────────────────────────────────────────
+     GATING FREE/PRO (Fase 2)
+     entitlementState se crea aqui (igual que calcState) a partir de
+     CoreC12EntitlementState (src/state/entitlement-state.js), si esta
+     cargado. isProUser se mantiene sincronizado via subscribe() — se
+     suscribe ANTES de llamar a init() para capturar tambien el ajuste
+     optimista desde cache que init() aplica de forma sincrona (ver
+     entitlement-state.js: arranque optimista, sin parpadeo Free->Pro).
+
+     Si CoreC12EntitlementState no esta cargado (como en la mayoria de
+     los tests existentes, que no conocen monetizacion), el gating
+     queda desactivado por completo y la calculadora se comporta
+     exactamente como antes de la Fase 2 — mismo principio que
+     requestHaptics() con CoreC12Haptics ausente.
+     ───────────────────────────────────────────── */
+
+  let entitlementLoaded = false;
+  let isProUser = false;
+
+  function initEntitlement() {
+    if (typeof CoreC12EntitlementState === 'undefined') return;
+    entitlementLoaded = true;
+    const entitlementState = CoreC12EntitlementState.createEntitlementState();
+    entitlementState.subscribe((snapshot) => { isProUser = snapshot.isPro; });
+    entitlementState.init(); // fire-and-forget: no bloquea el arranque de la calculadora
+  }
+
+  // Unico punto que consulta la matriz Free/Pro (CoreC12ProFeatures).
+  // Devuelve true si la accion NO debe ejecutarse porque requiere Pro
+  // y el usuario actual no lo es.
+  function isGatedByPro(kind, rate, direction) {
+    if (!entitlementLoaded || isProUser) return false;
+    return kind === 'tax'
+      ? CoreC12ProFeatures.isProTax(rate, direction)
+      : CoreC12ProFeatures.isProMargin(rate, direction);
+  }
+
+  // Intent temporal para que Fase 4 conecte el paywall visual definitivo.
+  // Sin CoreC12ProPaywall cargado, es un no-op seguro (mismo patron que
+  // requestHaptics con CoreC12Haptics ausente).
+  function requestProPaywall(feature) {
+    if (typeof CoreC12ProPaywall === 'undefined') return;
+    if (typeof CoreC12ProPaywall.requestOpen !== 'function') return;
+    CoreC12ProPaywall.requestOpen({ type: 'OPEN_PRO_PAYWALL', feature });
+  }
+
+
+  /* ─────────────────────────────────────────────
      REFERENCIAS AL DOM
      ───────────────────────────────────────────── */
 
@@ -75,6 +122,7 @@
     const config = CoreC12Config.getConfig();
     calcState = CoreC12State.createState({ decimals: config.decimals });
     applyConfiguredRates(config);
+    initEntitlement();
 
     // Renderiza selectores de dirección y rótulos de tasa según el estado inicial
     renderTaxDirectionButtons();
@@ -269,6 +317,11 @@
      ───────────────────────────────────────── */
 
   function applyMargin(rate, btn) {
+    const direction = calcState.getSnapshot().marginDirection;
+    if (isGatedByPro('margin', rate, direction)) {
+      requestProPaywall({ kind: 'margin', rate, direction });
+      return;
+    }
     if (!calcState.applyMargin(rate)) return;
     setActiveMarginButton(btn);
     updateDisplay();
@@ -294,6 +347,11 @@
      ───────────────────────────────────────── */
 
   function applyTax(rate) {
+    const direction = calcState.getSnapshot().taxDirection;
+    if (isGatedByPro('tax', rate, direction)) {
+      requestProPaywall({ kind: 'tax', rate, direction });
+      return;
+    }
     if (!calcState.applyTax(rate)) return;
     updateDisplay();
   }

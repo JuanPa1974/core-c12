@@ -23,6 +23,7 @@ const ROOT = path.resolve(__dirname, '..');
 const INDEX_HTML_PATH = path.join(ROOT, 'index.html');
 const CORE_JS_PATH = path.join(ROOT, 'src', 'core', 'calculator.js');
 const STATE_JS_PATH = path.join(ROOT, 'src', 'state', 'calculator-state.js');
+const PRO_FEATURES_JS_PATH = path.join(ROOT, 'src', 'state', 'pro-features.js');
 const STORAGE_JS_PATH = path.join(ROOT, 'src', 'storage', 'preferences.js');
 const CONFIG_JS_PATH = path.join(ROOT, 'src', 'config.js');
 const CALC_JS_PATH = path.join(ROOT, 'src', 'calc.js');
@@ -227,21 +228,46 @@ function buildFakeDocument(html) {
  * script) — omit this option to test calc.js exactly as the other 161
  * tests do, with CoreC12Haptics left undefined (a real no-op, same as
  * calc.js's own guard produces when the platform layer isn't loaded).
+ *
+ * options.entitlementState (Fase 2 — Free/Pro gating): pass a fake
+ * object shaped like the real CoreC12EntitlementState global (i.e.
+ * exposing createEntitlementState()) to turn gating ON for this
+ * engine — calc.js reads isPro from it via subscribe()/getSnapshot().
+ * src/platform/purchases.js and the real src/state/entitlement-state.js
+ * are never loaded here (StoreKit/Capacitor boundary — see Fase 1's own
+ * tests for that layer); this only fakes the JS contract calc.js
+ * consumes. Omit it to test calc.js exactly as every pre-Fase-2 test
+ * does, with CoreC12EntitlementState left undefined — gating is then
+ * fully disabled (see calc.js's own guard), preserving the unrestricted
+ * calculator behavior every existing test already relies on.
+ *
+ * options.proPaywall: pass a plain { requestOpen } spy object to
+ * observe the OPEN_PRO_PAYWALL intent calc.js emits when a Pro action
+ * is blocked, without wiring any real paywall UI (Fase 4).
+ *
+ * src/state/pro-features.js (the Free/Pro matrix) IS always loaded —
+ * it is pure and inert (no side effects beyond exposing itself on
+ * globalThis) and calc.js only ever reads it from inside the
+ * gating branch, which stays unreachable unless options.entitlementState
+ * is provided — so loading it unconditionally never changes any
+ * pre-Fase-2 test's behavior.
  */
 function createEngine(options = {}) {
   if (
     !fs.existsSync(INDEX_HTML_PATH) ||
     !fs.existsSync(CORE_JS_PATH) ||
     !fs.existsSync(STATE_JS_PATH) ||
+    !fs.existsSync(PRO_FEATURES_JS_PATH) ||
     !fs.existsSync(STORAGE_JS_PATH) ||
     !fs.existsSync(CONFIG_JS_PATH) ||
     !fs.existsSync(CALC_JS_PATH)
   ) {
-    throw new Error('index.html not found at project root, or core/calculator.js, state/calculator-state.js, storage/preferences.js, config.js, calc.js not found in src/');
+    throw new Error('index.html not found at project root, or core/calculator.js, state/calculator-state.js, state/pro-features.js, storage/preferences.js, config.js, calc.js not found in src/');
   }
   const html = fs.readFileSync(INDEX_HTML_PATH, 'utf8');
   const coreSrc = fs.readFileSync(CORE_JS_PATH, 'utf8');
   const stateSrc = fs.readFileSync(STATE_JS_PATH, 'utf8');
+  const proFeaturesSrc = fs.readFileSync(PRO_FEATURES_JS_PATH, 'utf8');
   const storageSrc = fs.readFileSync(STORAGE_JS_PATH, 'utf8');
   const configSrc = fs.readFileSync(CONFIG_JS_PATH, 'utf8');
   const calcSrc = fs.readFileSync(CALC_JS_PATH, 'utf8');
@@ -251,12 +277,16 @@ function createEngine(options = {}) {
   const sandbox = { document: fakeDocument, console, localStorage: fakeLocalStorage };
   sandbox.window = sandbox; // window === globalThis, as in a real browser
   if (options.haptics) sandbox.CoreC12Haptics = options.haptics;
+  if (options.entitlementState) sandbox.CoreC12EntitlementState = options.entitlementState;
+  if (options.proPaywall) sandbox.CoreC12ProPaywall = options.proPaywall;
   vm.createContext(sandbox);
   // Mismo orden de carga que index.html: core (CoreC12Core), state
-  // (CoreC12State) y storage (CoreC12Preferences) antes que config
-  // (CoreC12Config), antes que calc.js, que depende de los cuatro.
+  // (CoreC12State), la matriz Free/Pro (CoreC12ProFeatures) y storage
+  // (CoreC12Preferences) antes que config (CoreC12Config), antes que
+  // calc.js, que depende de todos ellos.
   vm.runInContext(coreSrc, sandbox, { filename: 'core/calculator.js' });
   vm.runInContext(stateSrc, sandbox, { filename: 'state/calculator-state.js' });
+  vm.runInContext(proFeaturesSrc, sandbox, { filename: 'state/pro-features.js' });
   vm.runInContext(storageSrc, sandbox, { filename: 'storage/preferences.js' });
   vm.runInContext(configSrc, sandbox, { filename: 'config.js' });
   vm.runInContext(calcSrc, sandbox, { filename: 'calc.js' });
