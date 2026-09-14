@@ -45,27 +45,47 @@
 
 
   /* ─────────────────────────────────────────────
-     GATING FREE/PRO (Fase 2)
-     entitlementState se crea aqui (igual que calcState) a partir de
-     CoreC12EntitlementState (src/state/entitlement-state.js), si esta
-     cargado. isProUser se mantiene sincronizado via subscribe() — se
-     suscribe ANTES de llamar a init() para capturar tambien el ajuste
-     optimista desde cache que init() aplica de forma sincrona (ver
-     entitlement-state.js: arranque optimista, sin parpadeo Free->Pro).
+     GATING FREE/PRO (Fase 2 + correccion de plataforma)
+     El modelo Free/Pro SOLO aplica donde existe compra nativa real
+     (StoreKit 2 / iOS) — ver CoreC12Purchases.isSupported() en
+     src/platform/purchases.js, que ya distingue nativo de Web/PWA.
+     La monetizacion Web/PWA no esta decidida todavia (STOREKIT2_SPIKE.md):
+     "StoreKit no disponible" NO equivale a "usuario Free". Por eso
+     gatingEnabled exige AMBAS cosas — capa de entitlement cargada Y
+     plataforma nativa soportada — y es la UNICA condicion de
+     plataforma en todo el archivo: isGatedByPro() no vuelve a
+     preguntar por Web/iOS, solo consulta este flag ya resuelto.
 
-     Si CoreC12EntitlementState no esta cargado (como en la mayoria de
-     los tests existentes, que no conocen monetizacion), el gating
-     queda desactivado por completo y la calculadora se comporta
-     exactamente como antes de la Fase 2 — mismo principio que
-     requestHaptics() con CoreC12Haptics ausente.
+     Sin CoreC12EntitlementState o sin soporte nativo (Web/PWA, o la
+     mayoria de los tests existentes, que no conocen monetizacion), el
+     gating queda desactivado por completo y la calculadora se
+     comporta exactamente como antes de la Fase 2 — mismo principio
+     que requestHaptics() con CoreC12Haptics ausente. isProUser NUNCA
+     se fuerza a true para simular esto: Web no es "Pro", el modelo
+     simplemente no aplica ahi todavia.
+
+     entitlementState se crea aqui (igual que calcState) a partir de
+     CoreC12EntitlementState, solo cuando gatingEnabled resulta true.
+     isProUser se mantiene sincronizado via subscribe() — se suscribe
+     ANTES de llamar a init() para capturar tambien el ajuste optimista
+     desde cache que init() aplica de forma sincrona (ver
+     entitlement-state.js: arranque optimista, sin parpadeo Free->Pro).
      ───────────────────────────────────────────── */
 
-  let entitlementLoaded = false;
+  let gatingEnabled = false;
   let isProUser = false;
+
+  function isNativePurchasesSupported() {
+    return typeof CoreC12Purchases !== 'undefined'
+      && typeof CoreC12Purchases.isSupported === 'function'
+      && CoreC12Purchases.isSupported();
+  }
 
   function initEntitlement() {
     if (typeof CoreC12EntitlementState === 'undefined') return;
-    entitlementLoaded = true;
+    if (!isNativePurchasesSupported()) return; // Web/PWA: el modelo Free/Pro no aplica todavia
+
+    gatingEnabled = true;
     const entitlementState = CoreC12EntitlementState.createEntitlementState();
     entitlementState.subscribe((snapshot) => { isProUser = snapshot.isPro; });
     entitlementState.init(); // fire-and-forget: no bloquea el arranque de la calculadora
@@ -73,9 +93,11 @@
 
   // Unico punto que consulta la matriz Free/Pro (CoreC12ProFeatures).
   // Devuelve true si la accion NO debe ejecutarse porque requiere Pro
-  // y el usuario actual no lo es.
+  // y el usuario actual no lo es. gatingEnabled ya resolvio la
+  // frontera de plataforma en initEntitlement(): aqui no se vuelve a
+  // preguntar por Web/iOS.
   function isGatedByPro(kind, rate, direction) {
-    if (!entitlementLoaded || isProUser) return false;
+    if (!gatingEnabled || isProUser) return false;
     return kind === 'tax'
       ? CoreC12ProFeatures.isProTax(rate, direction)
       : CoreC12ProFeatures.isProMargin(rate, direction);

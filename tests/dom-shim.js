@@ -245,6 +245,17 @@ function buildFakeDocument(html) {
  * observe the OPEN_PRO_PAYWALL intent calc.js emits when a Pro action
  * is blocked, without wiring any real paywall UI (Fase 4).
  *
+ * options.purchases (platform-gating correction): pass a fake
+ * { isSupported } object (e.g. { isSupported: () => true }) to control
+ * whether calc.js treats this engine as native-with-StoreKit or as
+ * Web/PWA — mirrors the real CoreC12Purchases.isSupported() contract
+ * from src/platform/purchases.js without loading that file (real npm
+ * import, unparseable here). Free/Pro gating only ever activates when
+ * BOTH this reports true AND options.entitlementState is set — that is
+ * the fix itself: "StoreKit unavailable" must never be treated as
+ * "user is Free". Omit it (with options.entitlementState set) to get
+ * the Web/PWA case: entitlement exists but gating stays off.
+ *
  * src/state/pro-features.js (the Free/Pro matrix) IS always loaded —
  * it is pure and inert (no side effects beyond exposing itself on
  * globalThis) and calc.js only ever reads it from inside the
@@ -279,6 +290,7 @@ function createEngine(options = {}) {
   if (options.haptics) sandbox.CoreC12Haptics = options.haptics;
   if (options.entitlementState) sandbox.CoreC12EntitlementState = options.entitlementState;
   if (options.proPaywall) sandbox.CoreC12ProPaywall = options.proPaywall;
+  if (options.purchases) sandbox.CoreC12Purchases = options.purchases;
   vm.createContext(sandbox);
   // Mismo orden de carga que index.html: core (CoreC12Core), state
   // (CoreC12State), la matriz Free/Pro (CoreC12ProFeatures) y storage

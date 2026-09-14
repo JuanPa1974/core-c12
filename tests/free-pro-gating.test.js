@@ -1,17 +1,22 @@
 'use strict';
 
 /*
- * Integration tests for the Fase 2 Free/Pro feature gating, driven
- * through the REAL calc.js via tests/dom-shim.js's createEngine() —
- * same mechanism as tests/calc-engine.test.js — with a fake
- * CoreC12EntitlementState injected via options.entitlementState to
- * turn gating on deterministically (see dom-shim.js's own comment on
- * that option for why the fake stops at the JS Platform boundary,
- * same principle as Fase 1: StoreKit/Swift itself is never touched).
+ * Integration tests for Fase 2 Free/Pro feature gating AND its
+ * platform-scoping correction, driven through the REAL calc.js via
+ * tests/dom-shim.js's createEngine() — same mechanism as
+ * tests/calc-engine.test.js.
+ *
+ * Gating only activates when BOTH options.entitlementState AND a
+ * native-with-StoreKit options.purchases (isSupported() -> true) are
+ * present — that pairing is the platform-boundary fix itself:
+ * "StoreKit unavailable" (Web/PWA, or options.purchases omitted) must
+ * never be treated as "user is Free". Fakes stop at the JS Platform
+ * boundary (same principle as Fase 1): StoreKit/Swift itself is never
+ * touched, only the CoreC12Purchases/CoreC12EntitlementState contracts
+ * calc.js consumes.
  *
  * Every pre-existing test in this repo calls createEngine() WITHOUT
- * options.entitlementState, so CoreC12EntitlementState stays undefined
- * in their sandbox and gating never activates for them — see
+ * either option, so gating never activates for them — see
  * tests/calc-engine.test.js's own IVA/margin tests, which exercise
  * every rate (10%, 21%, 25%...45%) expecting them to compute freely,
  * exactly as before Fase 2. This file is the only one that turns
@@ -41,6 +46,15 @@ function createFakeEntitlement(isPro) {
   };
 }
 
+// Simula CoreC12Purchases.isSupported() sin cargar el archivo real
+// (import npm real, no parseable via vm) — ver dom-shim.js.
+function iosNativeWithStoreKit() {
+  return { isSupported: () => true };
+}
+function webWithoutStoreKit() {
+  return { isSupported: () => false };
+}
+
 function createSpyPaywall() {
   const calls = [];
   return { calls, requestOpen(intent) { calls.push(intent); } };
@@ -58,19 +72,19 @@ function assertFeature(feature, expected) {
   assert.equal(feature.direction, expected.direction);
 }
 
-// ── FREE: IVA ───────────────────────────────────────────────────────────
+// ── iOS FREE: IVA ─────────────────────────────────────────────────────────
 
-test('gating FREE: +IVA 4% ejecuta normalmente (funcion Free)', () => {
-  const c = createEngine({ entitlementState: createFakeEntitlement(false) });
+test('iOS FREE: +IVA 4% ejecuta normalmente (funcion Free)', () => {
+  const c = createEngine({ entitlementState: createFakeEntitlement(false), purchases: iosNativeWithStoreKit() });
   c.digit(1); c.digit(0); c.digit(0);
   c.setTaxDirection('add');
   c.taxRate(4);
   assert.equal(c.numberValue(), 104);
 });
 
-test('gating FREE: +IVA 10% bloquea — no calcula y emite el intent de paywall', () => {
+test('iOS FREE: +IVA 10% bloquea — no calcula y emite el intent de paywall', () => {
   const proPaywall = createSpyPaywall();
-  const c = createEngine({ entitlementState: createFakeEntitlement(false), proPaywall });
+  const c = createEngine({ entitlementState: createFakeEntitlement(false), purchases: iosNativeWithStoreKit(), proPaywall });
   c.digit(1); c.digit(0); c.digit(0);
   c.setTaxDirection('add');
   c.taxRate(10);
@@ -80,9 +94,9 @@ test('gating FREE: +IVA 10% bloquea — no calcula y emite el intent de paywall'
   assert.equal(proPaywall.calls[0].type, 'OPEN_PRO_PAYWALL');
 });
 
-test('gating FREE: +IVA 21% bloquea', () => {
+test('iOS FREE: +IVA 21% bloquea', () => {
   const proPaywall = createSpyPaywall();
-  const c = createEngine({ entitlementState: createFakeEntitlement(false), proPaywall });
+  const c = createEngine({ entitlementState: createFakeEntitlement(false), purchases: iosNativeWithStoreKit(), proPaywall });
   c.digit(1); c.digit(0); c.digit(0);
   c.setTaxDirection('add');
   c.taxRate(21);
@@ -90,9 +104,9 @@ test('gating FREE: +IVA 21% bloquea', () => {
   assert.equal(proPaywall.calls.length, 1);
 });
 
-test('gating FREE: -IVA 4% bloquea (misma tasa que la version gratuita, pero direccion distinta)', () => {
+test('iOS FREE: -IVA 4% bloquea (misma tasa que la version gratuita, pero direccion distinta)', () => {
   const proPaywall = createSpyPaywall();
-  const c = createEngine({ entitlementState: createFakeEntitlement(false), proPaywall });
+  const c = createEngine({ entitlementState: createFakeEntitlement(false), purchases: iosNativeWithStoreKit(), proPaywall });
   c.digit(1); c.digit(0); c.digit(0);
   c.setTaxDirection('remove');
   c.taxRate(4);
@@ -101,10 +115,10 @@ test('gating FREE: -IVA 4% bloquea (misma tasa que la version gratuita, pero dir
   assertFeature(proPaywall.calls[0].feature, { kind: 'tax', rate: 4, direction: 'remove' });
 });
 
-test('gating FREE: -IVA 10% y -IVA 21% tambien bloquean', () => {
+test('iOS FREE: -IVA 10% y -IVA 21% tambien bloquean', () => {
   for (const rate of [10, 21]) {
     const proPaywall = createSpyPaywall();
-    const c = createEngine({ entitlementState: createFakeEntitlement(false), proPaywall });
+    const c = createEngine({ entitlementState: createFakeEntitlement(false), purchases: iosNativeWithStoreKit(), proPaywall });
     c.digit(1); c.digit(0); c.digit(0);
     c.setTaxDirection('remove');
     c.taxRate(rate);
@@ -113,19 +127,19 @@ test('gating FREE: -IVA 10% y -IVA 21% tambien bloquean', () => {
   }
 });
 
-// ── FREE: MARGEN ────────────────────────────────────────────────────────
+// ── iOS FREE: MARGEN ────────────────────────────────────────────────────
 
-test('gating FREE: +Margen 20% ejecuta normalmente (funcion Free)', () => {
-  const c = createEngine({ entitlementState: createFakeEntitlement(false) });
+test('iOS FREE: +Margen 20% ejecuta normalmente (funcion Free)', () => {
+  const c = createEngine({ entitlementState: createFakeEntitlement(false), purchases: iosNativeWithStoreKit() });
   c.digit(1); c.digit(0); c.digit(0);
   c.setMarginDirection('forward');
   c.marginRate(20);
   assert.equal(c.numberValue(), 125); // 100 / (1 - 0.20)
 });
 
-test('gating FREE: +Margen 25% bloquea', () => {
+test('iOS FREE: +Margen 25% bloquea', () => {
   const proPaywall = createSpyPaywall();
-  const c = createEngine({ entitlementState: createFakeEntitlement(false), proPaywall });
+  const c = createEngine({ entitlementState: createFakeEntitlement(false), purchases: iosNativeWithStoreKit(), proPaywall });
   c.digit(1); c.digit(0); c.digit(0);
   c.setMarginDirection('forward');
   c.marginRate(25);
@@ -134,9 +148,9 @@ test('gating FREE: +Margen 25% bloquea', () => {
   assertFeature(proPaywall.calls[0].feature, { kind: 'margin', rate: 25, direction: 'forward' });
 });
 
-test('gating FREE: -Margen 20% bloquea (misma tasa que la version gratuita, pero direccion inversa)', () => {
+test('iOS FREE: -Margen 20% bloquea (misma tasa que la version gratuita, pero direccion inversa)', () => {
   const proPaywall = createSpyPaywall();
-  const c = createEngine({ entitlementState: createFakeEntitlement(false), proPaywall });
+  const c = createEngine({ entitlementState: createFakeEntitlement(false), purchases: iosNativeWithStoreKit(), proPaywall });
   c.digit(1); c.digit(0); c.digit(0);
   c.setMarginDirection('reverse');
   c.marginRate(20);
@@ -145,10 +159,10 @@ test('gating FREE: -Margen 20% bloquea (misma tasa que la version gratuita, pero
   assertFeature(proPaywall.calls[0].feature, { kind: 'margin', rate: 20, direction: 'reverse' });
 });
 
-test('gating FREE: el resto de margenes inversos (25/30/35/40/45) tambien bloquea', () => {
+test('iOS FREE: el resto de margenes inversos (25/30/35/40/45) tambien bloquea', () => {
   for (const rate of [25, 30, 35, 40, 45]) {
     const proPaywall = createSpyPaywall();
-    const c = createEngine({ entitlementState: createFakeEntitlement(false), proPaywall });
+    const c = createEngine({ entitlementState: createFakeEntitlement(false), purchases: iosNativeWithStoreKit(), proPaywall });
     c.digit(1); c.digit(0); c.digit(0);
     c.setMarginDirection('reverse');
     c.marginRate(rate);
@@ -157,10 +171,10 @@ test('gating FREE: el resto de margenes inversos (25/30/35/40/45) tambien bloque
   }
 });
 
-test('gating FREE: el resto de margenes directos (30/35/40/45) tambien bloquea', () => {
+test('iOS FREE: el resto de margenes directos (30/35/40/45) tambien bloquea', () => {
   for (const rate of [30, 35, 40, 45]) {
     const proPaywall = createSpyPaywall();
-    const c = createEngine({ entitlementState: createFakeEntitlement(false), proPaywall });
+    const c = createEngine({ entitlementState: createFakeEntitlement(false), purchases: iosNativeWithStoreKit(), proPaywall });
     c.digit(1); c.digit(0); c.digit(0);
     c.setMarginDirection('forward');
     c.marginRate(rate);
@@ -169,39 +183,39 @@ test('gating FREE: el resto de margenes directos (30/35/40/45) tambien bloquea',
   }
 });
 
-// ── PRO: todas las funciones anteriores ejecutan normalmente ────────────
+// ── iOS PRO: todas las funciones anteriores ejecutan normalmente ────────
 
-test('gating PRO: +IVA 10%/21% y -IVA 4%/10%/21% ejecutan normalmente', () => {
+test('iOS PRO: +IVA 10%/21% y -IVA 4%/10%/21% ejecutan normalmente', () => {
   const proPaywall = createSpyPaywall();
 
-  const up10 = createEngine({ entitlementState: createFakeEntitlement(true), proPaywall });
+  const up10 = createEngine({ entitlementState: createFakeEntitlement(true), purchases: iosNativeWithStoreKit(), proPaywall });
   up10.digit(1); up10.digit(0); up10.digit(0); up10.setTaxDirection('add'); up10.taxRate(10);
   assert.equal(up10.numberValue(), 110);
 
-  const up21 = createEngine({ entitlementState: createFakeEntitlement(true), proPaywall });
+  const up21 = createEngine({ entitlementState: createFakeEntitlement(true), purchases: iosNativeWithStoreKit(), proPaywall });
   up21.digit(1); up21.digit(0); up21.digit(0); up21.setTaxDirection('add'); up21.taxRate(21);
   assert.equal(up21.numberValue(), 121);
 
-  const down4 = createEngine({ entitlementState: createFakeEntitlement(true), proPaywall });
+  const down4 = createEngine({ entitlementState: createFakeEntitlement(true), purchases: iosNativeWithStoreKit(), proPaywall });
   down4.digit(1); down4.digit(0); down4.digit(4); down4.setTaxDirection('remove'); down4.taxRate(4);
   assert.equal(down4.numberValue(), 100);
 
-  const down10 = createEngine({ entitlementState: createFakeEntitlement(true), proPaywall });
+  const down10 = createEngine({ entitlementState: createFakeEntitlement(true), purchases: iosNativeWithStoreKit(), proPaywall });
   down10.digit(1); down10.digit(1); down10.digit(0); down10.setTaxDirection('remove'); down10.taxRate(10);
   assert.equal(down10.numberValue(), 100);
 
-  const down21 = createEngine({ entitlementState: createFakeEntitlement(true), proPaywall });
+  const down21 = createEngine({ entitlementState: createFakeEntitlement(true), purchases: iosNativeWithStoreKit(), proPaywall });
   down21.digit(1); down21.digit(2); down21.digit(1); down21.setTaxDirection('remove'); down21.taxRate(21);
   assert.equal(down21.numberValue(), 100);
 
   assert.equal(proPaywall.calls.length, 0, 'un usuario Pro nunca deberia disparar el paywall');
 });
 
-test('gating PRO: margenes directos (25..45) e inversos (20..45) ejecutan normalmente', () => {
+test('iOS PRO: margenes directos (25..45) e inversos (20..45) ejecutan normalmente', () => {
   const proPaywall = createSpyPaywall();
 
   for (const rate of [25, 30, 35, 40, 45]) {
-    const c = createEngine({ entitlementState: createFakeEntitlement(true), proPaywall });
+    const c = createEngine({ entitlementState: createFakeEntitlement(true), purchases: iosNativeWithStoreKit(), proPaywall });
     c.digit(1); c.digit(0); c.digit(0);
     c.setMarginDirection('forward');
     c.marginRate(rate);
@@ -209,7 +223,7 @@ test('gating PRO: margenes directos (25..45) e inversos (20..45) ejecutan normal
   }
 
   for (const rate of [20, 25, 30, 35, 40, 45]) {
-    const c = createEngine({ entitlementState: createFakeEntitlement(true), proPaywall });
+    const c = createEngine({ entitlementState: createFakeEntitlement(true), purchases: iosNativeWithStoreKit(), proPaywall });
     c.digit(1); c.digit(0); c.digit(0);
     c.setMarginDirection('reverse');
     c.marginRate(rate);
@@ -219,19 +233,80 @@ test('gating PRO: margenes directos (25..45) e inversos (20..45) ejecutan normal
   assert.equal(proPaywall.calls.length, 0, 'un usuario Pro nunca deberia disparar el paywall');
 });
 
-test('gating PRO: las funciones Free (+IVA 4%, +Margen 20%) siguen funcionando igual para un usuario Pro', () => {
-  const c = createEngine({ entitlementState: createFakeEntitlement(true) });
+test('iOS PRO: las funciones Free (+IVA 4%, +Margen 20%) siguen funcionando igual para un usuario Pro', () => {
+  const c = createEngine({ entitlementState: createFakeEntitlement(true), purchases: iosNativeWithStoreKit() });
   c.digit(1); c.digit(0); c.digit(0);
   c.setTaxDirection('add');
   c.taxRate(4);
   assert.equal(c.numberValue(), 104);
 });
 
-// ── INTEGRIDAD DE ESTADO ─────────────────────────────────────────────────
+// ── WEB/PWA: el modelo Free/Pro no aplica todavia (correccion de plataforma) ──
+
+test('Web/PWA: +IVA 10% y +IVA 21% ejecutan normalmente aunque el entitlement diga Free', () => {
+  const proPaywall = createSpyPaywall();
+
+  const up10 = createEngine({ entitlementState: createFakeEntitlement(false), purchases: webWithoutStoreKit(), proPaywall });
+  up10.digit(1); up10.digit(0); up10.digit(0); up10.setTaxDirection('add'); up10.taxRate(10);
+  assert.equal(up10.numberValue(), 110);
+
+  const up21 = createEngine({ entitlementState: createFakeEntitlement(false), purchases: webWithoutStoreKit(), proPaywall });
+  up21.digit(1); up21.digit(0); up21.digit(0); up21.setTaxDirection('add'); up21.taxRate(21);
+  assert.equal(up21.numberValue(), 121);
+
+  assert.equal(proPaywall.calls.length, 0, 'Web/PWA no debe emitir OPEN_PRO_PAYWALL');
+});
+
+test('Web/PWA: -IVA (4%/10%/21%) ejecuta normalmente', () => {
+  const proPaywall = createSpyPaywall();
+  for (const rate of [4, 10, 21]) {
+    const c = createEngine({ entitlementState: createFakeEntitlement(false), purchases: webWithoutStoreKit(), proPaywall });
+    c.digit(1); c.digit(2); c.digit(1);
+    c.setTaxDirection('remove');
+    c.taxRate(rate);
+    assert.notEqual(c.numberValue(), 121, `-IVA ${rate}% deberia haberse aplicado`);
+  }
+  assert.equal(proPaywall.calls.length, 0);
+});
+
+test('Web/PWA: margenes directos 25-45% ejecutan normalmente', () => {
+  const proPaywall = createSpyPaywall();
+  for (const rate of [25, 30, 35, 40, 45]) {
+    const c = createEngine({ entitlementState: createFakeEntitlement(false), purchases: webWithoutStoreKit(), proPaywall });
+    c.digit(1); c.digit(0); c.digit(0);
+    c.setMarginDirection('forward');
+    c.marginRate(rate);
+    assert.notEqual(c.numberValue(), 100, `+Margen ${rate}% deberia haberse aplicado en Web`);
+  }
+  assert.equal(proPaywall.calls.length, 0);
+});
+
+test('Web/PWA: margenes inversos 20-45% ejecutan normalmente', () => {
+  const proPaywall = createSpyPaywall();
+  for (const rate of [20, 25, 30, 35, 40, 45]) {
+    const c = createEngine({ entitlementState: createFakeEntitlement(false), purchases: webWithoutStoreKit(), proPaywall });
+    c.digit(1); c.digit(0); c.digit(0);
+    c.setMarginDirection('reverse');
+    c.marginRate(rate);
+    assert.notEqual(c.numberValue(), 100, `-Margen ${rate}% deberia haberse aplicado en Web`);
+  }
+  assert.equal(proPaywall.calls.length, 0);
+});
+
+test('Web/PWA: no se emite OPEN_PRO_PAYWALL bajo ninguna combinacion, incluso con entitlement Free', () => {
+  const proPaywall = createSpyPaywall();
+  const c = createEngine({ entitlementState: createFakeEntitlement(false), purchases: webWithoutStoreKit(), proPaywall });
+  c.digit(1); c.digit(0); c.digit(0);
+  c.setTaxDirection('add'); c.taxRate(21);
+  c.setMarginDirection('reverse'); c.marginRate(45);
+  assert.equal(proPaywall.calls.length, 0);
+});
+
+// ── INTEGRIDAD DE ESTADO (iOS FREE) ──────────────────────────────────────
 
 test('gating: una accion Pro bloqueada no toca el display y preserva el operando/operador pendientes', () => {
   const proPaywall = createSpyPaywall();
-  const c = createEngine({ entitlementState: createFakeEntitlement(false), proPaywall });
+  const c = createEngine({ entitlementState: createFakeEntitlement(false), purchases: iosNativeWithStoreKit(), proPaywall });
 
   c.digit(5); c.digit(0);   // "50"
   c.operator('+');           // pendiente: 50 +
@@ -252,7 +327,7 @@ test('gating: una accion Pro bloqueada no toca el display y preserva el operando
 });
 
 test('gating: una accion Pro bloqueada no deja ningun margen activo ni estado de IVA/margen residual', () => {
-  const c = createEngine({ entitlementState: createFakeEntitlement(false) });
+  const c = createEngine({ entitlementState: createFakeEntitlement(false), purchases: iosNativeWithStoreKit() });
   c.digit(1); c.digit(0); c.digit(0);
   c.setMarginDirection('forward');
   c.marginRate(25); // bloqueado
@@ -260,19 +335,30 @@ test('gating: una accion Pro bloqueada no deja ningun margen activo ni estado de
 });
 
 test('gating: sin CoreC12ProPaywall cargado, una accion bloqueada sigue sin ejecutar la formula (no lanza)', () => {
-  const c = createEngine({ entitlementState: createFakeEntitlement(false) }); // sin proPaywall
+  const c = createEngine({ entitlementState: createFakeEntitlement(false), purchases: iosNativeWithStoreKit() }); // sin proPaywall
   c.digit(1); c.digit(0); c.digit(0);
   c.setTaxDirection('add');
   assert.doesNotThrow(() => c.taxRate(10));
   assert.equal(c.numberValue(), 100);
 });
 
-// ── REGRESION: sin entitlement cargado, el gating queda desactivado ──────
+// ── REGRESION ─────────────────────────────────────────────────────────────
 
 test('gating: sin CoreC12EntitlementState cargado (como en todos los tests pre-Fase-2), nada se bloquea', () => {
-  const c = createEngine(); // sin options.entitlementState
+  const c = createEngine(); // sin options.entitlementState ni options.purchases
   c.digit(1); c.digit(0); c.digit(0);
   c.setTaxDirection('add');
   c.taxRate(21);
   assert.equal(c.numberValue(), 121, 'sin capa de monetizacion cargada, la calculadora es totalmente funcional');
+});
+
+test('gating: entitlement cargado pero SIN CoreC12Purchases (isSupported indeterminado) -> gating queda desactivado', () => {
+  // Cubre el mismo principio que la correccion: si no se puede confirmar
+  // soporte nativo, nunca se asume gating activo (fail-safe hacia "no
+  // bloquear", nunca hacia "bloquear de mas").
+  const c = createEngine({ entitlementState: createFakeEntitlement(false) }); // sin options.purchases
+  c.digit(1); c.digit(0); c.digit(0);
+  c.setTaxDirection('add');
+  c.taxRate(21);
+  assert.equal(c.numberValue(), 121);
 });
