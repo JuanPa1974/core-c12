@@ -15,14 +15,19 @@
  *
  *   1. The Web/non-native degrade path — deterministic in this Node
  *      environment, since there is no native bridge at all here.
- *   2. That Capacitor.isNativePlatform() truly gates the two code
- *      paths: forcing it to `true` (a plain property on the `Capacitor`
+ *   2. That Capacitor.getPlatform() truly gates the two code paths:
+ *      forcing it to return 'ios' (a plain property on the `Capacitor`
  *      object, not a Proxy — this DOES work) must make purchases.js
  *      actually attempt the native call instead of short-circuiting to
  *      the "unavailable" shape. Since no real native implementation
  *      exists in this environment, that attempt rejects — which also
  *      proves native failures propagate as rejections rather than
  *      being swallowed (the entitlement state machine depends on this).
+ *
+ *      Android (Fase 2 — Capacitor Shell) is native (isNativePlatform()
+ *      true) but has no CoreC12Purchases bridge yet: getPlatform()
+ *      returning 'android' must still degrade to the Web "unavailable"
+ *      shape, exactly like Web, and must NOT attempt the bridge.
  *
  * Per the Fase 1 instructions, StoreKit/Swift itself is never mocked
  * here or anywhere else — only this Platform boundary is exercised.
@@ -88,19 +93,41 @@ test('platform/purchases: Web/no-nativo -> restorePurchases() degrada a { isPro:
   assert.deepEqual(result, { isPro: false, status: 'unavailable' });
 });
 
-test('platform/purchases: plataforma nativa simulada -> las 4 operaciones intentan el bridge real (y rechazan, al no existir aqui) en vez de devolver el resultado "unavailable" de Web', async () => {
+test('platform/purchases: iOS simulado (getPlatform="ios") -> isSupported() true y las 4 operaciones intentan el bridge real (y rechazan, al no existir aqui) en vez de devolver el resultado "unavailable"', async () => {
   const mod = await loadPurchasesPlatform();
   const { Capacitor } = await loadCapacitorCore();
 
-  const origIsNative = Capacitor.isNativePlatform;
-  Capacitor.isNativePlatform = () => true;
+  const origGetPlatform = Capacitor.getPlatform;
+  Capacitor.getPlatform = () => 'ios';
 
   try {
+    assert.equal(mod.isSupported(), true);
     await assert.rejects(() => mod.getProduct());
     await assert.rejects(() => mod.purchase());
     await assert.rejects(() => mod.getEntitlement());
     await assert.rejects(() => mod.restorePurchases());
   } finally {
+    Capacitor.getPlatform = origGetPlatform;
+  }
+});
+
+test('platform/purchases: Android shell simulado (getPlatform="android", plataforma nativa) -> isSupported() false y las 4 operaciones degradan sin intentar el bridge inexistente', async () => {
+  const mod = await loadPurchasesPlatform();
+  const { Capacitor } = await loadCapacitorCore();
+
+  const origGetPlatform = Capacitor.getPlatform;
+  const origIsNative = Capacitor.isNativePlatform;
+  Capacitor.getPlatform = () => 'android';
+  Capacitor.isNativePlatform = () => true; // Android es plataforma nativa, pero sin bridge de compras
+
+  try {
+    assert.equal(mod.isSupported(), false);
+    assert.deepEqual(await mod.getProduct(), { available: false });
+    assert.deepEqual(await mod.purchase(), { status: 'unavailable', isPro: false });
+    assert.deepEqual(await mod.getEntitlement(), { isPro: false });
+    assert.deepEqual(await mod.restorePurchases(), { isPro: false, status: 'unavailable' });
+  } finally {
+    Capacitor.getPlatform = origGetPlatform;
     Capacitor.isNativePlatform = origIsNative;
   }
 });

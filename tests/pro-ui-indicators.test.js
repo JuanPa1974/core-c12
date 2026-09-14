@@ -21,7 +21,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { createEngine } = require('./dom-shim');
-const { createFakeEntitlement, iosNativeWithStoreKit, webWithoutStoreKit } = require('./fake-entitlement');
+const { createFakeEntitlement, iosNativeWithStoreKit, webWithoutStoreKit, androidShellWithoutPurchases } = require('./fake-entitlement');
 
 const ALL_TAX_RATES = [4, 10, 21];
 const ALL_MARGIN_RATES = [20, 25, 30, 35, 40, 45];
@@ -156,6 +156,28 @@ test('Web/PWA: sin CoreC12EntitlementState ni CoreC12Purchases cargados (como to
   c.setMarginDirection('reverse');
   for (const rate of ALL_TAX_RATES) assert.equal(c.isRateProLocked('tax-rate', rate), false);
   for (const rate of ALL_MARGIN_RATES) assert.equal(c.isRateProLocked('margin-rate', rate), false);
+});
+
+// ── Android shell (Fase 2 — Capacitor Shell) ─────────────────────────────
+// Nativa, pero sin plugin de compras: mismo resultado que Web a este nivel
+// de integracion — ver el comentario de tests/free-pro-gating.test.js.
+
+test('Android shell: ninguna etiqueta PRO visible en IVA ni Margen, aunque el entitlement diga Free', () => {
+  const c = createEngine({ entitlementState: createFakeEntitlement(false), purchases: androidShellWithoutPurchases() });
+  c.setTaxDirection('add');
+  for (const rate of ALL_TAX_RATES) {
+    assert.equal(c.isRateProLocked('tax-rate', rate), false, `Android: IVA ${rate}% no deberia mostrar PRO`);
+  }
+  c.setMarginDirection('reverse');
+  for (const rate of ALL_MARGIN_RATES) {
+    assert.equal(c.isRateProLocked('margin-rate', rate), false, `Android: Margen ${rate}% no deberia mostrar PRO`);
+  }
+});
+
+test('Android shell: ningun aria-label menciona Pro, aunque el entitlement diga Free', () => {
+  const c = createEngine({ entitlementState: createFakeEntitlement(false), purchases: androidShellWithoutPurchases() });
+  c.setTaxDirection('add');
+  assertAriaCommunicatesPro(c.rateAriaLabel('tax-rate', 21), false);
 });
 
 // ── REGRESION: layout/tamaño/posicion y gating funcional intactos ────────

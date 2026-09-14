@@ -53,5 +53,16 @@ function iosNativeWithStoreKit() {
 function webWithoutStoreKit() {
   return { isSupported: () => false };
 }
+// Android shell (Fase 2 — Capacitor Shell): plataforma nativa, pero sin
+// el plugin CoreC12Purchases (Billing aun no existe). A este nivel de
+// integracion (calc.js solo consulta isSupported()) el resultado es el
+// mismo booleano que Web — la diferencia real (Android SI es nativa,
+// pero el bridge no existe) se prueba en tests/platform-purchases.test.js,
+// contra el modulo real. Este fake tiene su propio nombre para que la
+// cobertura de la frontera quede documentada explicitamente por
+// plataforma, no solo heredada de "es lo mismo que Web".
+function androidShellWithoutPurchases() {
+  return { isSupported: () => false };
+}
 
-module.exports = { createFakeEntitlement, iosNativeWithStoreKit, webWithoutStoreKit };
+module.exports = { createFakeEntitlement, iosNativeWithStoreKit, webWithoutStoreKit, androidShellWithoutPurchases };

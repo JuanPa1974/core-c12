@@ -26,7 +26,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { createEngine } = require('./dom-shim');
-const { createFakeEntitlement, iosNativeWithStoreKit, webWithoutStoreKit } = require('./fake-entitlement');
+const { createFakeEntitlement, iosNativeWithStoreKit, webWithoutStoreKit, androidShellWithoutPurchases } = require('./fake-entitlement');
 
 function createSpyPaywall() {
   const calls = [];
@@ -272,6 +272,41 @@ test('Web/PWA: no se emite OPEN_PRO_PAYWALL bajo ninguna combinacion, incluso co
   c.digit(1); c.digit(0); c.digit(0);
   c.setTaxDirection('add'); c.taxRate(21);
   c.setMarginDirection('reverse'); c.marginRate(45);
+  assert.equal(proPaywall.calls.length, 0);
+});
+
+// ── ANDROID SHELL: el modelo Free/Pro tampoco aplica (sin plugin Billing) ──
+// Fase 2 — Capacitor Shell: Android ES plataforma nativa (a diferencia de
+// Web), pero CoreC12Purchases.isSupported() es false porque el plugin de
+// compras aun no existe ahi (ver platform/purchases.js). El resultado a
+// este nivel de integracion es identico a Web/PWA — representativo, no
+// exhaustivo por tasa: la matriz completa ya esta cubierta arriba (iOS) y
+// abajo (Web); aqui solo se prueba que la frontera de plataforma tambien
+// desactiva el gating en Android.
+
+test('Android shell: +IVA 10%/21% ejecutan normalmente, sin paywall (sin plugin Billing todavia)', () => {
+  const proPaywall = createSpyPaywall();
+
+  const up10 = createEngine({ entitlementState: createFakeEntitlement(false), purchases: androidShellWithoutPurchases(), proPaywall });
+  up10.digit(1); up10.digit(0); up10.digit(0); up10.setTaxDirection('add'); up10.taxRate(10);
+  assert.equal(up10.numberValue(), 110);
+
+  const up21 = createEngine({ entitlementState: createFakeEntitlement(false), purchases: androidShellWithoutPurchases(), proPaywall });
+  up21.digit(1); up21.digit(0); up21.digit(0); up21.setTaxDirection('add'); up21.taxRate(21);
+  assert.equal(up21.numberValue(), 121);
+
+  assert.equal(proPaywall.calls.length, 0, 'Android shell no debe emitir OPEN_PRO_PAYWALL (bridge inexistente)');
+});
+
+test('Android shell: margenes directos e inversos ejecutan normalmente, sin paywall', () => {
+  const proPaywall = createSpyPaywall();
+  for (const rate of [25, 35, 45]) {
+    const c = createEngine({ entitlementState: createFakeEntitlement(false), purchases: androidShellWithoutPurchases(), proPaywall });
+    c.digit(1); c.digit(0); c.digit(0);
+    c.setMarginDirection('forward');
+    c.marginRate(rate);
+    assert.notEqual(c.numberValue(), 100, `+Margen ${rate}% deberia haberse aplicado en Android shell`);
+  }
   assert.equal(proPaywall.calls.length, 0);
 });
 
