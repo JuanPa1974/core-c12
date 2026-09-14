@@ -201,3 +201,91 @@ test('regresion: gating funcional de Fase 2 sigue intacto (ningun calculo cambia
   c.taxRate(21);
   assert.equal(c.numberValue(), 121, 'un usuario Pro sigue calculando exactamente igual que en Fase 2');
 });
+
+// ── ACCESIBILIDAD: aria-label expone el estado Pro (el ::after de CSS no
+//    es una senal fiable para tecnologias asistivas) ─────────────────────
+//
+// isGatedByPro() es la unica fuente de verdad (misma funcion que decide
+// el badge visual y el bloqueo funcional), asi que estas pruebas
+// verifican el aria-label directamente contra CoreC12ProFeatures en vez
+// de hardcodear que rangos son Pro — evita triplicar la matriz.
+
+function assertAriaCommunicatesPro(label, shouldBePro) {
+  const mentionsPro = /pro/i.test(label);
+  assert.equal(mentionsPro, shouldBePro, `aria-label "${label}" deberia ${shouldBePro ? '' : 'NO '}mencionar Pro`);
+}
+
+test('iOS FREE: el aria-label de un boton Pro comunica el estado Pro a VoiceOver', () => {
+  const c = createEngine({ entitlementState: createFakeEntitlement(false), purchases: iosNativeWithStoreKit() });
+  c.setTaxDirection('add');
+  assertAriaCommunicatesPro(c.rateAriaLabel('tax-rate', 10), true);
+  assert.ok(c.rateAriaLabel('tax-rate', 10).startsWith('IVA 10 por ciento'), 'no debe perder el texto base del boton');
+});
+
+test('iOS FREE: el aria-label de un boton Free NO menciona Pro', () => {
+  const c = createEngine({ entitlementState: createFakeEntitlement(false), purchases: iosNativeWithStoreKit() });
+  c.setTaxDirection('add');
+  assertAriaCommunicatesPro(c.rateAriaLabel('tax-rate', 4), false);
+  assert.equal(c.rateAriaLabel('tax-rate', 4), 'IVA 4 por ciento');
+});
+
+test('iOS FREE: -IVA 4% (misma tasa que la version gratuita, pero direccion distinta) SI comunica Pro', () => {
+  const c = createEngine({ entitlementState: createFakeEntitlement(false), purchases: iosNativeWithStoreKit() });
+  c.setTaxDirection('remove');
+  assertAriaCommunicatesPro(c.rateAriaLabel('tax-rate', 4), true);
+});
+
+test('iOS FREE: +Margen 20% no comunica Pro, +Margen 25% si (misma logica para margenes)', () => {
+  const c = createEngine({ entitlementState: createFakeEntitlement(false), purchases: iosNativeWithStoreKit() });
+  c.setMarginDirection('forward');
+  assertAriaCommunicatesPro(c.rateAriaLabel('margin-rate', 20), false);
+  assertAriaCommunicatesPro(c.rateAriaLabel('margin-rate', 25), true);
+});
+
+test('iOS PRO: ningun aria-label conserva indicacion de bloqueo Pro', () => {
+  const c = createEngine({ entitlementState: createFakeEntitlement(true), purchases: iosNativeWithStoreKit() });
+  for (const direction of ['add', 'remove']) {
+    c.setTaxDirection(direction);
+    for (const rate of ALL_TAX_RATES) {
+      assertAriaCommunicatesPro(c.rateAriaLabel('tax-rate', rate), false);
+    }
+  }
+  for (const direction of ['forward', 'reverse']) {
+    c.setMarginDirection(direction);
+    for (const rate of ALL_MARGIN_RATES) {
+      assertAriaCommunicatesPro(c.rateAriaLabel('margin-rate', rate), false);
+    }
+  }
+});
+
+test('Web/PWA: ningun aria-label menciona Pro, aunque el entitlement diga Free', () => {
+  const c = createEngine({ entitlementState: createFakeEntitlement(false), purchases: webWithoutStoreKit() });
+  for (const direction of ['add', 'remove']) {
+    c.setTaxDirection(direction);
+    for (const rate of ALL_TAX_RATES) {
+      assertAriaCommunicatesPro(c.rateAriaLabel('tax-rate', rate), false);
+    }
+  }
+  for (const direction of ['forward', 'reverse']) {
+    c.setMarginDirection(direction);
+    for (const rate of ALL_MARGIN_RATES) {
+      assertAriaCommunicatesPro(c.rateAriaLabel('margin-rate', rate), false);
+    }
+  }
+});
+
+test('accesibilidad: el boton bloqueado sigue siendo interactivo (sin disabled, sin cambiar el data-action)', () => {
+  const c = createEngine({ entitlementState: createFakeEntitlement(false), purchases: iosNativeWithStoreKit() });
+  c.setTaxDirection('add');
+  assert.equal(c.isActionDisabled('tax-rate'), false);
+  // El aria-label debe seguir empezando por el texto base — el rol del
+  // boton (aplicar/abrir paywall) no cambia, solo se le añade contexto.
+  assert.ok(c.rateAriaLabel('tax-rate', 10).startsWith('IVA 10 por ciento'));
+});
+
+test('regresion: sin entitlement/purchases cargados, el aria-label es exactamente el mismo que antes de la Fase 3 (sin sufijo)', () => {
+  const c = createEngine(); // sin ninguna opcion de monetizacion, como todos los tests pre-Fase-2
+  c.setTaxDirection('add');
+  assert.equal(c.rateAriaLabel('tax-rate', 10), 'IVA 10 por ciento');
+  assert.equal(c.rateAriaLabel('margin-rate', 25), 'Margen 25 por ciento');
+});

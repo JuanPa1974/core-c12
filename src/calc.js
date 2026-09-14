@@ -111,6 +111,18 @@
       : CoreC12ProFeatures.isProMargin(rate, direction);
   }
 
+  // El badge visual ".is-pro-locked" (CSS ::after) no es una senal fiable
+  // para tecnologias asistivas — el contenido generado por CSS no forma
+  // parte del arbol de accesibilidad de forma consistente entre lectores
+  // de pantalla. Este sufijo comunica lo mismo por texto real en el
+  // aria-label, usando el mismo resultado de isGatedByPro() (misma fuente
+  // de verdad que el badge y que el bloqueo funcional: los tres nunca
+  // pueden divergir). El boton sigue siendo interactivo: su rol seguira
+  // siendo abrir el paywall (Fase 4), nunca deshabilitarse.
+  function proAriaSuffix(gated) {
+    return gated ? ', función Pro' : '';
+  }
+
   // Intent temporal para que Fase 4 conecte el paywall visual definitivo.
   // Sin CoreC12ProPaywall cargado, es un no-op seguro (mismo patron que
   // requestHaptics con CoreC12Haptics ausente).
@@ -516,9 +528,10 @@
     const direction = calcState.getSnapshot().taxDirection;
     const sign = direction === 'add' ? '+' : '−';
     document.querySelectorAll('[data-action="tax-rate"]').forEach((btn, i) => {
+      const gated = isGatedByPro('tax', Number(btn.dataset.rate), direction);
       btn.textContent = sign + CoreC12Config.formatRate(btn.dataset.rate);
-      btn.setAttribute('aria-label', rateAriaLabel('tax', i, btn.dataset.rate, false));
-      btn.classList.toggle('is-pro-locked', isGatedByPro('tax', Number(btn.dataset.rate), direction));
+      btn.setAttribute('aria-label', rateAriaLabel('tax', i, btn.dataset.rate, false) + proAriaSuffix(gated));
+      btn.classList.toggle('is-pro-locked', gated);
     });
   }
 
@@ -535,9 +548,10 @@
     const direction = calcState.getSnapshot().marginDirection;
     const sign = direction === 'forward' ? '+' : '−';
     document.querySelectorAll('[data-action="margin-rate"]').forEach((btn, i) => {
+      const gated = isGatedByPro('margin', Number(btn.dataset.rate), direction);
       btn.textContent = sign + CoreC12Config.formatRate(btn.dataset.rate);
-      btn.setAttribute('aria-label', rateAriaLabel('margin', i, btn.dataset.rate, false));
-      btn.classList.toggle('is-pro-locked', isGatedByPro('margin', Number(btn.dataset.rate), direction));
+      btn.setAttribute('aria-label', rateAriaLabel('margin', i, btn.dataset.rate, false) + proAriaSuffix(gated));
+      btn.classList.toggle('is-pro-locked', gated);
     });
   }
 
