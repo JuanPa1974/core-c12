@@ -366,6 +366,14 @@ function createEngine(options = {}) {
       const btn = findButton((b) => b.dataset.action === action && b.dataset.rate === String(rate));
       return btn.classList.contains('is-active');
     },
+    // Fase 3: indicador visual PRO (.is-pro-locked), alternado por
+    // calc.js segun isGatedByPro() cada vez que se renderizan las
+    // etiquetas de tasa (init, cambio de direccion, salida de edicion,
+    // o un cambio en vivo de isProUser via subscribe()).
+    isRateProLocked(action, rate) {
+      const btn = findButton((b) => b.dataset.action === action && b.dataset.rate === String(rate));
+      return btn.classList.contains('is-pro-locked');
+    },
     hasClass(action, className) {
       const btn = findButton((b) => b.dataset.action === action);
       return btn.classList.contains(className);

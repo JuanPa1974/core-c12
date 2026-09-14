@@ -87,7 +87,15 @@
 
     gatingEnabled = true;
     const entitlementState = CoreC12EntitlementState.createEntitlementState();
-    entitlementState.subscribe((snapshot) => { isProUser = snapshot.isPro; });
+    entitlementState.subscribe((snapshot) => {
+      isProUser = snapshot.isPro;
+      // Re-renderiza los indicadores PRO ante cualquier cambio de
+      // isProUser que no venga de un cambio de direccion (revalidacion
+      // en segundo plano, o una compra/restore en fases futuras) — los
+      // indicadores nunca deben quedar obsoletos.
+      renderTaxRateLabels();
+      renderMarginRateLabels();
+    });
     entitlementState.init(); // fire-and-forget: no bloquea el arranque de la calculadora
   }
 
@@ -505,10 +513,12 @@
   }
 
   function renderTaxRateLabels() {
-    const sign = calcState.getSnapshot().taxDirection === 'add' ? '+' : '−';
+    const direction = calcState.getSnapshot().taxDirection;
+    const sign = direction === 'add' ? '+' : '−';
     document.querySelectorAll('[data-action="tax-rate"]').forEach((btn, i) => {
       btn.textContent = sign + CoreC12Config.formatRate(btn.dataset.rate);
       btn.setAttribute('aria-label', rateAriaLabel('tax', i, btn.dataset.rate, false));
+      btn.classList.toggle('is-pro-locked', isGatedByPro('tax', Number(btn.dataset.rate), direction));
     });
   }
 
@@ -522,10 +532,12 @@
   }
 
   function renderMarginRateLabels() {
-    const sign = calcState.getSnapshot().marginDirection === 'forward' ? '+' : '−';
+    const direction = calcState.getSnapshot().marginDirection;
+    const sign = direction === 'forward' ? '+' : '−';
     document.querySelectorAll('[data-action="margin-rate"]').forEach((btn, i) => {
       btn.textContent = sign + CoreC12Config.formatRate(btn.dataset.rate);
       btn.setAttribute('aria-label', rateAriaLabel('margin', i, btn.dataset.rate, false));
+      btn.classList.toggle('is-pro-locked', isGatedByPro('margin', Number(btn.dataset.rate), direction));
     });
   }
 

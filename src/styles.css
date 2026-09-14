@@ -36,6 +36,11 @@
   --color-iva:       #F5C518;
   --color-margin:    #E07000;
 
+  /* Indicador PRO (Fase 3) — violeta, distinto de IVA/margen para no
+     confundirse con esos acentos comerciales existentes */
+  --bg-pro-badge:    #6D4FC4;
+  --color-pro-badge: #FFFFFF;
+
   /* Texto */
   --color-text:      #FFFFFF;
   --color-text-dim:  rgba(255, 255, 255, 0.60);
@@ -795,6 +800,38 @@ button:focus-visible {
   background-color: #241200;
   border: 1px solid var(--color-margin);
   color: var(--color-margin);
+}
+
+/* ─────────────────────────────────────────────
+   INDICADOR PRO (Fase 3) — bloqueo funcional visible
+   Generado con ::after: no toca el markup ni el textContent que
+   calc.js ya escribe para la tasa (btn.textContent), así que ninguna
+   de las dos escrituras interfiere con la otra. calc.js solo alterna
+   la clase .is-pro-locked (isGatedByPro(), derivado de la matriz
+   central pro-features.js) — ninguna regla comercial vive aquí.
+
+   Deliberadamente pequeño y uniforme: sin candado, sin atenuar el
+   botón, sin mover ni redimensionar nada (posición absoluta dentro
+   de .btn, que ya es position:relative + overflow:hidden). Texto
+   real "PRO" (no solo color) para no depender únicamente del color
+   como indicador. pointer-events:none: un pseudo-elemento nunca es
+   su propio target de evento, pero se deja explícito a propósito.
+   ───────────────────────────────────────────── */
+.btn--special.is-pro-locked::after {
+  content: 'PRO';
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  padding: 1px 4px;
+  border-radius: 4px;
+  background-color: var(--bg-pro-badge);
+  color: var(--color-pro-badge);
+  font-family: var(--font-ui);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  line-height: 1.4;
+  pointer-events: none;
 }
 
 
