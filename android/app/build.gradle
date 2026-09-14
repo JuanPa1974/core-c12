@@ -15,6 +15,18 @@ android {
              // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
+        // Fase 3 — Android Billing spike: Play Console "App integrity" >
+        // Licensing PUBLIC key (Base64 X.509 DER). This is a public value,
+        // not a secret — entirely distinct from the app's signing/keystore
+        // key, which never appears here or anywhere in source control.
+        // Empty until the real product is configured in Play Console (see
+        // docs/architecture/ANDROID_BILLING_SPIKE.md); PurchaseVerifier
+        // reports CONFIG_INCOMPLETE for every purchase while it's empty,
+        // rather than silently skipping verification.
+        buildConfigField "String", "PLAY_LICENSING_PUBLIC_KEY_BASE64", "\"\""
+    }
+    buildFeatures {
+        buildConfig true
     }
     buildTypes {
         release {
@@ -36,6 +48,8 @@ dependencies {
     implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
     implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
     implementation project(':capacitor-android')
+    // Fase 3 — Android Billing spike. Sole added dependency this phase.
+    implementation "com.android.billingclient:billing:9.1.0"
     testImplementation "junit:junit:$junitVersion"
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
