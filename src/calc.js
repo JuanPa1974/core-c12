@@ -64,12 +64,16 @@
      se fuerza a true para simular esto: Web no es "Pro", el modelo
      simplemente no aplica ahi todavia.
 
-     entitlementState se crea aqui (igual que calcState) a partir de
-     CoreC12EntitlementState, solo cuando gatingEnabled resulta true.
-     isProUser se mantiene sincronizado via subscribe() — se suscribe
-     ANTES de llamar a init() para capturar tambien el ajuste optimista
-     desde cache que init() aplica de forma sincrona (ver
-     entitlement-state.js: arranque optimista, sin parpadeo Free->Pro).
+     entitlementState (Fase 4: la instancia PRODUCTIVA COMPARTIDA via
+     CoreC12EntitlementState.getSharedEntitlementState() — la misma que
+     usa src/paywall.js para purchase()/restore(), no una copia propia:
+     si no, una compra hecha desde el paywall nunca actualizaria estos
+     indicadores). isProUser se sincroniza leyendo getSnapshot() justo
+     al obtener la instancia (por si otro modulo ya la creo e inicio
+     antes) y luego via subscribe() para cualquier cambio posterior —
+     esto cubre tanto el ajuste optimista desde cache (arranque sin
+     parpadeo Free->Pro) como una compra/restore mientras la app ya
+     esta abierta.
      ───────────────────────────────────────────── */
 
   let gatingEnabled = false;
@@ -86,17 +90,17 @@
     if (!isNativePurchasesSupported()) return; // Web/PWA: el modelo Free/Pro no aplica todavia
 
     gatingEnabled = true;
-    const entitlementState = CoreC12EntitlementState.createEntitlementState();
+    const entitlementState = CoreC12EntitlementState.getSharedEntitlementState();
+    isProUser = entitlementState.getSnapshot().isPro;
     entitlementState.subscribe((snapshot) => {
       isProUser = snapshot.isPro;
       // Re-renderiza los indicadores PRO ante cualquier cambio de
       // isProUser que no venga de un cambio de direccion (revalidacion
-      // en segundo plano, o una compra/restore en fases futuras) — los
-      // indicadores nunca deben quedar obsoletos.
+      // en segundo plano, o una compra/restore hecha desde el paywall)
+      // — los indicadores nunca deben quedar obsoletos.
       renderTaxRateLabels();
       renderMarginRateLabels();
     });
-    entitlementState.init(); // fire-and-forget: no bloquea el arranque de la calculadora
   }
 
   // Unico punto que consulta la matriz Free/Pro (CoreC12ProFeatures).
@@ -123,13 +127,15 @@
     return gated ? ', función Pro' : '';
   }
 
-  // Intent temporal para que Fase 4 conecte el paywall visual definitivo.
-  // Sin CoreC12ProPaywall cargado, es un no-op seguro (mismo patron que
-  // requestHaptics con CoreC12Haptics ausente).
-  function requestProPaywall(feature) {
+  // Conecta con src/paywall.js (Fase 4). Sin CoreC12ProPaywall cargado
+  // (Web/PWA sin ese script, o un test que no lo necesita), es un
+  // no-op seguro — mismo patron que requestHaptics con CoreC12Haptics
+  // ausente. sourceElement (el boton Pro pulsado) viaja en el intent
+  // para que el paywall pueda devolverle el foco al cerrarse.
+  function requestProPaywall(feature, sourceElement) {
     if (typeof CoreC12ProPaywall === 'undefined') return;
     if (typeof CoreC12ProPaywall.requestOpen !== 'function') return;
-    CoreC12ProPaywall.requestOpen({ type: 'OPEN_PRO_PAYWALL', feature });
+    CoreC12ProPaywall.requestOpen({ type: 'OPEN_PRO_PAYWALL', feature, sourceElement });
   }
 
 
@@ -222,7 +228,7 @@
       case 'tax-rate':
         // Edición margen activa -> IVA queda bloqueado por completo (no-op)
         if (editState.editMode === 'tax') selectEditPosition('tax', rateButtonIndex(btn, 'tax-rate'), btn);
-        else if (editState.editMode === null) applyTax(rateNum);
+        else if (editState.editMode === null) applyTax(rateNum, btn);
         break;
       case 'tax-direction':    setTaxDirection(btn.dataset.direction);    break;
       // data-decimals, no data-rate
@@ -361,7 +367,7 @@
   function applyMargin(rate, btn) {
     const direction = calcState.getSnapshot().marginDirection;
     if (isGatedByPro('margin', rate, direction)) {
-      requestProPaywall({ kind: 'margin', rate, direction });
+      requestProPaywall({ kind: 'margin', rate, direction }, btn);
       return;
     }
     if (!calcState.applyMargin(rate)) return;
@@ -388,10 +394,10 @@
      una tasa (applyTax), que lee la dirección activa en ese momento.
      ───────────────────────────────────────── */
 
-  function applyTax(rate) {
+  function applyTax(rate, btn) {
     const direction = calcState.getSnapshot().taxDirection;
     if (isGatedByPro('tax', rate, direction)) {
-      requestProPaywall({ kind: 'tax', rate, direction });
+      requestProPaywall({ kind: 'tax', rate, direction }, btn);
       return;
     }
     if (!calcState.applyTax(rate)) return;

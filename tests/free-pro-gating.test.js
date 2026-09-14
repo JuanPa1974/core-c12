@@ -26,34 +26,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { createEngine } = require('./dom-shim');
-
-function createFakeEntitlement(isPro) {
-  const snapshot = { status: isPro ? 'pro' : 'free', isPro, error: null };
-  return {
-    createEntitlementState() {
-      return {
-        getSnapshot: () => snapshot,
-        // El entitlement-state real notifica el ajuste optimista de forma
-        // sincrona dentro de init(), antes de su primer await — subscribe()
-        // aqui reproduce exactamente eso: el listener recibe el snapshot ya
-        // en la primera llamada, sin esperar ningun tick.
-        subscribe(fn) { fn(snapshot); return () => {}; },
-        init: async () => {},
-        purchase: async () => ({ success: false }),
-        restore: async () => ({ found: false }),
-      };
-    },
-  };
-}
-
-// Simula CoreC12Purchases.isSupported() sin cargar el archivo real
-// (import npm real, no parseable via vm) — ver dom-shim.js.
-function iosNativeWithStoreKit() {
-  return { isSupported: () => true };
-}
-function webWithoutStoreKit() {
-  return { isSupported: () => false };
-}
+const { createFakeEntitlement, iosNativeWithStoreKit, webWithoutStoreKit } = require('./fake-entitlement');
 
 function createSpyPaywall() {
   const calls = [];

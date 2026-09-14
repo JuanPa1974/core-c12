@@ -893,6 +893,181 @@ button:focus-visible {
 
 
 /* ─────────────────────────────────────────────
+   PAYWALL — Core C12 Pro (Fase 4)
+   Overlay sobre la calculadora (nunca navegación): el propio
+   contenedor .paywall es el backdrop — un clic directo sobre él
+   (nunca sobre .paywall__dialog) lo cierra, gestionado en
+   src/paywall.js. Compacto a propósito: sin tarjetas internas, sin
+   iconos decorativos, sin degradados ni animaciones largas — solo un
+   fade/scale corto con --transition-fast en el mismo espíritu que el
+   resto de la UI.
+   ───────────────────────────────────────────── */
+
+.paywall {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background-color: rgba(6, 9, 12, 0.72);
+  animation: paywall-fade 150ms ease;
+}
+
+.paywall[hidden] {
+  display: none;
+}
+
+@keyframes paywall-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.paywall__dialog {
+  position: relative;
+  width: 100%;
+  max-width: 300px;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-hairline-md);
+  border-radius: var(--radius-block);
+  box-shadow: var(--shadow-card);
+  padding: 20px 18px 16px;
+  text-align: center;
+  animation: paywall-dialog-in 150ms ease;
+}
+
+@keyframes paywall-dialog-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.paywall__close {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-btn-sm);
+  color: var(--color-text-dim);
+  font-size: 20px;
+  line-height: 1;
+  font-family: var(--font-ui);
+}
+
+@media (hover: hover) {
+  .paywall__close:hover {
+    background-color: var(--bg-surface-2);
+    color: var(--color-text);
+  }
+}
+
+.paywall__title {
+  margin: 4px 0 6px;
+  font-family: var(--font-ui);
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.paywall__desc {
+  margin: 0 0 12px;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--color-text-dim);
+}
+
+.paywall__benefits {
+  margin: 0 0 16px;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  color: var(--color-text);
+}
+
+.paywall__benefits li {
+  position: relative;
+  padding-left: 16px;
+  line-height: 1.8;
+}
+
+.paywall__benefits li::before {
+  content: '–';
+  position: absolute;
+  left: 0;
+  color: var(--color-margin);
+}
+
+.paywall__cta {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: var(--radius-btn);
+  background-color: var(--bg-btn-equals);
+  background-image: linear-gradient(180deg, var(--bg-btn-equals-hi), var(--bg-btn-equals));
+  color: var(--color-text);
+  font-family: var(--font-ui);
+  font-size: 15px;
+  font-weight: 700;
+  box-shadow: var(--shadow-btn);
+}
+
+.paywall__cta:active {
+  transform: translateY(1px);
+  filter: brightness(0.9);
+}
+
+.paywall__cta:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.paywall__cta-note {
+  margin: 8px 0 14px;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  color: var(--color-text-dim);
+}
+
+.paywall__restore {
+  background: transparent;
+  border: none;
+  padding: 4px;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-dim);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.paywall__restore:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  text-decoration: none;
+}
+
+.paywall__message {
+  min-height: 16px;
+  margin: 10px 0 0;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--color-text-dim);
+}
+
+
+/* ─────────────────────────────────────────────
    RESPONSIVE — Móvil landscape (≤ 767px)
    Sin vh. Branding y display con px fijos.
    Workspace toma el espacio restante con flex.

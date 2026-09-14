@@ -27,6 +27,7 @@ const PRO_FEATURES_JS_PATH = path.join(ROOT, 'src', 'state', 'pro-features.js');
 const STORAGE_JS_PATH = path.join(ROOT, 'src', 'storage', 'preferences.js');
 const CONFIG_JS_PATH = path.join(ROOT, 'src', 'config.js');
 const CALC_JS_PATH = path.join(ROOT, 'src', 'calc.js');
+const PAYWALL_JS_PATH = path.join(ROOT, 'src', 'paywall.js');
 
 /**
  * Minimal in-memory localStorage, with test-only hooks to simulate a
@@ -192,6 +193,7 @@ function buildFakeDocument(html) {
 
   const documentListeners = {};
   const fakeDocument = {
+    activeElement: null,
     getElementById(id) { return allElements.find((el) => el.id === id) || null; },
     querySelector(selector) {
       if (selector === '.app') return appEl;
@@ -202,7 +204,22 @@ function buildFakeDocument(html) {
     _fireDOMContentLoaded() {
       if (documentListeners.DOMContentLoaded) documentListeners.DOMContentLoaded();
     },
+    // Fase 4 (paywall): calc.js/paywall.js attach their own listeners
+    // directly to `document` (not just `.app`) — a real click bubbles
+    // to both, so the test driver's click() fires both too.
+    _fireClick(target) {
+      if (documentListeners.click) documentListeners.click({ target });
+    },
+    _fireKeydown(key) {
+      if (documentListeners.keydown) documentListeners.keydown({ key });
+    },
   };
+
+  // Fase 4: element.focus() tracks document.activeElement — needed to
+  // verify the paywall moves focus in on open and restores it on close.
+  allElements.forEach((el) => {
+    el.focus = function () { fakeDocument.activeElement = this; };
+  });
 
   return { fakeDocument, appEl, buttons, displayEls };
 }
@@ -262,6 +279,13 @@ function buildFakeDocument(html) {
  * gating branch, which stays unreachable unless options.entitlementState
  * is provided — so loading it unconditionally never changes any
  * pre-Fase-2 test's behavior.
+ *
+ * options.loadPaywall (Fase 4): pass true to load the REAL
+ * src/paywall.js (also pure DOM wiring, no npm imports) instead of a
+ * spy for CoreC12ProPaywall — use this to test the paywall's own
+ * open/close/purchase/restore behavior end to end. It unconditionally
+ * overwrites globalThis.CoreC12ProPaywall at load time, so never
+ * combine it with options.proPaywall in the same engine.
  */
 function createEngine(options = {}) {
   if (
@@ -282,10 +306,14 @@ function createEngine(options = {}) {
   const storageSrc = fs.readFileSync(STORAGE_JS_PATH, 'utf8');
   const configSrc = fs.readFileSync(CONFIG_JS_PATH, 'utf8');
   const calcSrc = fs.readFileSync(CALC_JS_PATH, 'utf8');
+  const paywallSrc = options.loadPaywall ? fs.readFileSync(PAYWALL_JS_PATH, 'utf8') : null;
   const { fakeDocument, appEl, buttons, displayEls } = buildFakeDocument(html);
   const fakeLocalStorage = options.localStorage || createFakeLocalStorage();
 
-  const sandbox = { document: fakeDocument, console, localStorage: fakeLocalStorage };
+  // setTimeout/clearTimeout: Fase 4's paywall.js delays closing briefly
+  // after a successful restore — the vm sandbox has no globals of its
+  // own, so the real Node timers are passed through explicitly.
+  const sandbox = { document: fakeDocument, console, localStorage: fakeLocalStorage, setTimeout, clearTimeout };
   sandbox.window = sandbox; // window === globalThis, as in a real browser
   if (options.haptics) sandbox.CoreC12Haptics = options.haptics;
   if (options.entitlementState) sandbox.CoreC12EntitlementState = options.entitlementState;
@@ -302,6 +330,7 @@ function createEngine(options = {}) {
   vm.runInContext(storageSrc, sandbox, { filename: 'storage/preferences.js' });
   vm.runInContext(configSrc, sandbox, { filename: 'config.js' });
   vm.runInContext(calcSrc, sandbox, { filename: 'calc.js' });
+  if (paywallSrc) vm.runInContext(paywallSrc, sandbox, { filename: 'paywall.js' });
   fakeDocument._fireDOMContentLoaded();
 
   function findButton(matchFn) {
@@ -314,6 +343,10 @@ function createEngine(options = {}) {
     const handler = appEl._listeners.click;
     if (!handler) throw new Error('.app click handler not registered — init() did not run');
     handler({ target: btn });
+    // Fase 4: paywall.js delegates via document (its markup lives
+    // outside .app) — a real click bubbles to both listeners, so this
+    // fires both too, matching real DOM semantics.
+    fakeDocument._fireClick(btn);
   }
 
   return {
@@ -340,6 +373,31 @@ function createEngine(options = {}) {
     editDoneMargin()   { click(findButton((b) => b.dataset.action === 'edit-done-margin')); },
     resetTaxRates()    { click(findButton((b) => b.dataset.action === 'reset-tax')); },
     resetMarginRates() { click(findButton((b) => b.dataset.action === 'reset-margin')); },
+
+    // ── Fase 4: paywall (requiere options.loadPaywall: true) ──
+    clickPaywallClose()    { click(findButton((b) => b.dataset.action === 'paywall-close')); },
+    clickPaywallPurchase() { click(findButton((b) => b.dataset.action === 'paywall-purchase')); },
+    clickPaywallRestore()  { click(findButton((b) => b.dataset.action === 'paywall-restore')); },
+    clickPaywallBackdrop() {
+      const el = fakeDocument.getElementById('pro-paywall');
+      if (!el) throw new Error('No element with id="pro-paywall" found in real index.html markup');
+      click(el);
+    },
+    pressEscape() { fakeDocument._fireKeydown('Escape'); },
+    isPaywallOpen() { return !this.elementHidden('pro-paywall'); },
+    paywallMessage() { return this.elementText('paywall-message'); },
+    paywallCtaText() { return findButton((b) => b.dataset.action === 'paywall-purchase').textContent; },
+    paywallCtaDisabled() { return !!findButton((b) => b.dataset.action === 'paywall-purchase').disabled; },
+    paywallRestoreText() { return findButton((b) => b.dataset.action === 'paywall-restore').textContent; },
+    paywallRestoreDisabled() { return !!findButton((b) => b.dataset.action === 'paywall-restore').disabled; },
+    activeElementId() { return fakeDocument.activeElement ? fakeDocument.activeElement.id : null; },
+    // Los botones de tasa (tax-rate/margin-rate) no tienen id — para
+    // verificar que el foco vuelve exactamente al boton Pro que abrio
+    // el paywall se compara su dataset en vez de su id.
+    activeElementDataset() {
+      return fakeDocument.activeElement ? Object.assign({}, fakeDocument.activeElement.dataset) : null;
+    },
+    isAppInert() { return !!appEl.inert; },
 
     // Lectura genérica de cualquier elemento con id (nuevo en Fase 2B:
     // cabeceras de bloque, fila de acciones, etiqueta de RESTABLECER).

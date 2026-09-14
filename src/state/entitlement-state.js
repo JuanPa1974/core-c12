@@ -207,4 +207,27 @@ function createEntitlementState(options) {
   };
 }
 
-globalThis.CoreC12EntitlementState = { createEntitlementState: createEntitlementState };
+// Instancia productiva compartida (Fase 4): calc.js (gating) y
+// paywall.js (compra/restore) necesitan ver exactamente el mismo
+// estado de monetizacion, no dos maquinas de estado independientes —
+// si no, una compra hecha desde el paywall nunca actualizaria los
+// indicadores PRO que calc.js ya pinto. createEntitlementState() en
+// si mismo sigue siendo una fabrica pura sin efectos colaterales
+// (Fase 1: cada test crea su propia instancia aislada con fakes
+// inyectados); este wrapper solo memoiza UNA instancia productiva,
+// creada con los defaults reales (CoreC12Purchases/CoreC12Preferences),
+// e inicializada una unica vez.
+var sharedEntitlementState = null;
+
+function getSharedEntitlementState() {
+  if (!sharedEntitlementState) {
+    sharedEntitlementState = createEntitlementState();
+    sharedEntitlementState.init();
+  }
+  return sharedEntitlementState;
+}
+
+globalThis.CoreC12EntitlementState = {
+  createEntitlementState: createEntitlementState,
+  getSharedEntitlementState: getSharedEntitlementState,
+};

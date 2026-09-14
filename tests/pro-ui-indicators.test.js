@@ -21,28 +21,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { createEngine } = require('./dom-shim');
-
-function createFakeEntitlement(isPro) {
-  const snapshot = { status: isPro ? 'pro' : 'free', isPro, error: null };
-  return {
-    createEntitlementState() {
-      return {
-        getSnapshot: () => snapshot,
-        subscribe(fn) { fn(snapshot); return () => {}; },
-        init: async () => {},
-        purchase: async () => ({ success: false }),
-        restore: async () => ({ found: false }),
-      };
-    },
-  };
-}
-
-function iosNativeWithStoreKit() {
-  return { isSupported: () => true };
-}
-function webWithoutStoreKit() {
-  return { isSupported: () => false };
-}
+const { createFakeEntitlement, iosNativeWithStoreKit, webWithoutStoreKit } = require('./fake-entitlement');
 
 const ALL_TAX_RATES = [4, 10, 21];
 const ALL_MARGIN_RATES = [20, 25, 30, 35, 40, 45];
@@ -127,16 +106,19 @@ test('iOS PRO: ninguna etiqueta PRO visible en Margen (ninguna direccion)', () =
 
 test('iOS PRO: los indicadores desaparecen en vivo cuando isProUser pasa a true (sin recargar, via subscribe)', () => {
   let notify;
+  let shared = null;
+  function build() {
+    return {
+      getSnapshot: () => ({ status: 'free', isPro: false, error: null }),
+      subscribe(fn) { notify = fn; fn({ status: 'free', isPro: false, error: null }); return () => {}; },
+      init: async () => {},
+      purchase: async () => ({ success: false }),
+      restore: async () => ({ found: false }),
+    };
+  }
   const entitlementState = {
-    createEntitlementState() {
-      return {
-        getSnapshot: () => ({ status: 'free', isPro: false, error: null }),
-        subscribe(fn) { notify = fn; fn({ status: 'free', isPro: false, error: null }); return () => {}; },
-        init: async () => {},
-        purchase: async () => ({ success: false }),
-        restore: async () => ({ found: false }),
-      };
-    },
+    createEntitlementState() { return build(); },
+    getSharedEntitlementState() { if (!shared) shared = build(); return shared; },
   };
   const c = createEngine({ entitlementState, purchases: iosNativeWithStoreKit() });
   c.setTaxDirection('add');

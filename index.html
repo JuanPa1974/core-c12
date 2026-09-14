@@ -268,6 +268,47 @@
   <!-- /app -->
 
   <!-- =============================================
+       PAYWALL — Core C12 Pro (Fase 4)
+       Overlay sobre la calculadora, nunca navegacion. Oculto por
+       defecto (hidden); src/paywall.js controla su apertura/cierre.
+       El propio contenedor #pro-paywall funciona como backdrop: un
+       clic directamente sobre el (fuera de .paywall__dialog) cierra
+       el paywall si no hay compra/restore en curso.
+       ============================================= -->
+  <div id="pro-paywall" class="paywall" hidden>
+    <div id="paywall-dialog" class="paywall__dialog" role="dialog" aria-modal="true"
+      aria-labelledby="paywall-title" aria-describedby="paywall-desc" tabindex="-1">
+      <button class="paywall__close" data-action="paywall-close" type="button" aria-label="Cerrar Core C12 Pro">
+        &times;
+      </button>
+
+      <h2 id="paywall-title" class="paywall__title">Core C12 Pro</h2>
+      <p id="paywall-desc" class="paywall__desc">
+        Desbloquea todas las herramientas comerciales avanzadas.
+      </p>
+
+      <ul class="paywall__benefits">
+        <li>IVA completo</li>
+        <li>Márgenes completos</li>
+        <li>Cálculos inversos</li>
+        <li>Nuevas herramientas comerciales</li>
+      </ul>
+
+      <button class="paywall__cta" data-action="paywall-purchase" type="button">
+        Desbloquear Core C12 Pro
+      </button>
+      <p class="paywall__cta-note">Pago único · Sin suscripción</p>
+
+      <button class="paywall__restore" data-action="paywall-restore" type="button">
+        Restaurar compra
+      </button>
+
+      <p id="paywall-message" class="paywall__message" role="status" aria-live="polite"></p>
+    </div>
+  </div>
+  <!-- /pro-paywall -->
+
+  <!-- =============================================
        SPIKE — StoreKit 2 (rama feature/core-c12-pro-iap)
        Panel de depuración temporal, NO productivo. Eliminar este
        bloque completo junto con src/iap-spike.js y
@@ -293,6 +334,7 @@
   <script type="module" src="/src/state/entitlement-state.js"></script>
   <script type="module" src="/src/config.js"></script>
   <script type="module" src="/src/calc.js"></script>
+  <script type="module" src="/src/paywall.js"></script>
   <script type="module" src="/src/platform/purchases-spike.js"></script>
   <script type="module" src="/src/iap-spike.js"></script>
 </body>
