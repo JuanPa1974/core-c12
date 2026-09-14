@@ -1,28 +1,12 @@
 import Foundation
 import Capacitor
 import StoreKit
-#if DEBUG
-import StoreKitTest
-#endif
 
-// SPIKE — StoreKit 2 technical spike (rama feature/core-c12-pro-iap).
-// Bridge nativo mínimo entre JavaScript y StoreKit 2 para demostrar
-// viabilidad de compras non-consumable sin backend. NO es la
-// arquitectura definitiva de monetización — Core C12 Pro completo se
-// diseñará en src/platform/purchases.js + src/state/entitlement-state.js
-// solo si este spike confirma que StoreKit 2 on-device es suficiente.
-//
-// IMPORTANTE (hallazgo confirmado con crash real, no una suposición):
-// SKTestSession(configurationFileNamed:) provoca un SIGABRT si se llama
-// fuera de un proceso anfitrión de XCTest — su inicializador depende
-// internamente de __getXCTestConfigurationClass, y NO es un error Swift
-// capturable con do/catch (el abort ocurre a nivel Objective-C, por
-// debajo del manejo de errores de Swift). Por eso NO se crea aquí en
-// load(): hacerlo bloquearía CUALQUIER arranque normal de la app
-// (`xcrun simctl launch`, o incluso Xcode Run sin un target de test).
-// simulateRefund() la crea de forma perezosa solo si se invoca
-// explícitamente — ver su propio comentario para el alcance exacto de
-// esta limitación.
+// Bridge nativo StoreKit 2 para Core C12 Pro: compra unica (non-consumable)
+// sin backend propio. JS -> Swift -> StoreKit 2 via Capacitor 8, consumido
+// exclusivamente por src/platform/purchases.js. Ver
+// docs/architecture/STOREKIT2_SPIKE.md para el contexto de diseño y las
+// decisiones ya validadas (viabilidad on-device, seguridad verified-only).
 @objc(CoreC12PurchasesPlugin)
 public class CoreC12PurchasesPlugin: CAPPlugin, CAPBridgedPlugin {
     public let identifier = "CoreC12PurchasesPlugin"
@@ -31,16 +15,10 @@ public class CoreC12PurchasesPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "getProduct", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "purchase", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "getEntitlement", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "restorePurchases", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "simulateRefund", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "restorePurchases", returnType: CAPPluginReturnPromise)
     ]
 
     private let proProductID = "com.andaralab.corec12.pro"
-    private var lastTransactionID: UInt64?
-
-    // load() deliberadamente no hace nada — ver el comentario de
-    // cabecera sobre por qué SKTestSession no puede crearse aquí sin
-    // abortar el proceso.
 
     @objc func getProduct(_ call: CAPPluginCall) {
         Task {
@@ -75,7 +53,6 @@ public class CoreC12PurchasesPlugin: CAPPlugin, CAPBridgedPlugin {
                 case .success(let verification):
                     switch verification {
                     case .verified(let transaction):
-                        self.lastTransactionID = transaction.id
                         await transaction.finish()
                         call.resolve([
                             "status": "verified",
@@ -115,7 +92,6 @@ public class CoreC12PurchasesPlugin: CAPPlugin, CAPBridgedPlugin {
         Task {
             for await result in Transaction.currentEntitlements {
                 if case .verified(let transaction) = result, transaction.productID == proProductID {
-                    self.lastTransactionID = transaction.id
                     call.resolve([
                         "isPro": true,
                         "transactionId": String(transaction.id)
@@ -135,7 +111,6 @@ public class CoreC12PurchasesPlugin: CAPPlugin, CAPBridgedPlugin {
                 try await AppStore.sync()
                 for await result in Transaction.currentEntitlements {
                     if case .verified(let transaction) = result, transaction.productID == proProductID {
-                        self.lastTransactionID = transaction.id
                         call.resolve([
                             "isPro": true,
                             "transactionId": String(transaction.id)
@@ -150,40 +125,5 @@ public class CoreC12PurchasesPlugin: CAPPlugin, CAPBridgedPlugin {
                 call.reject("Error al restaurar: \(error.localizedDescription)", "RESTORE_ERROR")
             }
         }
-    }
-
-    // SOLO SPIKE / DEBUG — simula un reembolso de la última transacción
-    // conocida usando StoreKit Testing. No existe equivalente en
-    // producción: en la app real, un reembolso lo procesa Apple y
-    // StoreKit 2 lo refleja automáticamente en Transaction.currentEntitlements.
-    @objc func simulateRefund(_ call: CAPPluginCall) {
-        #if DEBUG
-        // Guarda obligatoria: SKTestSession aborta el proceso (SIGABRT,
-        // no capturable) si no hay un anfitrión XCTest activo. Esta
-        // variable de entorno es la señal estándar y segura de que sí
-        // lo hay — comprobarla ANTES de instanciar la sesión es la única
-        // forma de evitar el crash en un lanzamiento normal (Xcode Run
-        // sin target de test, o `xcrun simctl launch`).
-        guard ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil else {
-            call.reject(
-                "simulateRefund requiere ejecutar la app desde un target XCTest (SKTestSession aborta el proceso fuera de ese contexto). No disponible desde un lanzamiento normal.",
-                "NO_XCTEST_HOST"
-            )
-            return
-        }
-        guard let transactionId = self.lastTransactionID else {
-            call.reject("No hay transacción reciente para reembolsar", "NO_TRANSACTION")
-            return
-        }
-        do {
-            let session = try SKTestSession(configurationFileNamed: "Configuration")
-            try session.refundTransaction(identifier: UInt(transactionId))
-            call.resolve(["status": "refunded"])
-        } catch {
-            call.reject("Error simulando reembolso: \(error.localizedDescription)", "REFUND_ERROR")
-        }
-        #else
-        call.reject("simulateRefund solo disponible en builds Debug", "NOT_AVAILABLE")
-        #endif
     }
 }

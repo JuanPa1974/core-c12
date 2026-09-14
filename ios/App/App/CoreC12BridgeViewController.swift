@@ -1,6 +1,6 @@
 import Capacitor
 
-// SPIKE — StoreKit 2 technical spike (rama feature/core-c12-pro-iap).
+// Registro productivo del plugin nativo StoreKit 2 (CoreC12PurchasesPlugin).
 //
 // Necesario porque el registro automático de plugins de Capacitor
 // (`CapacitorBridge.registerPlugins()`) solo escanea archivos .swift
