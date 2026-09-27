@@ -374,14 +374,14 @@ button:focus-visible {
 }
 
 .special-block--iva {
-  /* IVA sigue siendo el módulo prioritario: algo más de peso vertical
-     que margen, sin dejar de compartir el mismo lenguaje visual. */
-  flex: 1.1;
+  /* IVA usa una sola fila de tasas: se mantiene compacto para ceder
+     espacio vertical al módulo de margen, que necesita dos filas. */
+  flex: 0.90;
   border: 1px solid var(--color-iva);
 }
 
 .special-block--margin {
-  flex: 0.9;
+  flex: 1.10;
   border: 1px solid var(--color-margin);
 }
 
@@ -397,7 +397,7 @@ button:focus-visible {
 
 .special-block__label {
   font-family: var(--font-ui);
-  font-size: clamp(8px, 1.2vh, 10px);
+  font-size: clamp(10px, 1.6vh, 12px);
   font-weight: 700;
   letter-spacing: 2px;
   text-transform: uppercase;
